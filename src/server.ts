@@ -8,6 +8,7 @@ import {
   validatorCompiler,
 } from "fastify-type-provider-zod";
 import { errorHandler } from "./error-handler";
+import { getAllRoutes } from "./routes/get-all-routes";
 
 const app = fastify();
 
@@ -33,6 +34,8 @@ app.register(fastifySwaggerUi, {
 
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
+
+app.register(getAllRoutes, { prefix: "/api/v1" });
 
 app.setErrorHandler(errorHandler);
 

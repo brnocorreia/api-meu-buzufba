@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -22,7 +16,7 @@ model Route {
   statusCd          String          @default("A") @map("status_cd") @db.VarChar(10)
   createdAt         DateTime        @default(now()) @map("created_at")
   updatedAt         DateTime        @default(now()) @updatedAt @map("updated_at")
-  Departure         Departure[]
+  departures        Departure[]
   RouteLocation     RouteLocation[]
   RouteStop         RouteStop[]
 
@@ -30,11 +24,11 @@ model Route {
 }
 
 model Departure {
-  routeId       Int      @map("route_id")
-  departureTime DateTime @map("departure_time") @db.Time()
-  obs           String?  @db.VarChar(255)
-  statusCd      String   @default("A") @map("status_cd") @db.VarChar(10)
-  route         Route    @relation(fields: [routeId], references: [routeId])
+  routeId       Int     @map("route_id")
+  departureTime String  @map("departure_time") @db.VarChar(10)
+  obs           String? @db.VarChar(255)
+  statusCd      String  @default("A") @map("status_cd") @db.VarChar(10)
+  route         Route   @relation(fields: [routeId], references: [routeId])
 
   @@id([routeId, departureTime])
   @@map("departures")
@@ -57,8 +51,8 @@ model RouteLocation {
   routeId    Int      @map("route_id")
   locationId Int      @map("location_id")
   obs        String?  @db.VarChar(255)
-  route      Route    @relation(fields: [routeId], references: [routeId])
   location   Location @relation(fields: [locationId], references: [locationId])
+  route      Route    @relation(fields: [routeId], references: [routeId])
 
   @@id([routeId, locationId])
   @@map("route_locations")
