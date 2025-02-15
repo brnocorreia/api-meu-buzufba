@@ -1,21 +1,33 @@
+version: "3"
 services:
-  postgres:
-    image: postgres:17.0-alpine3.20
-    container_name: db-meu-buzufba
+  mongo:
+    image: mongo
+    restart: unless-stopped
     ports:
-      - 5432:5432
+      - 27017:27017
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      MONGO_INITDB_ROOT_USERNAME: meu_buzufba
+      MONGO_INITDB_ROOT_PASSWORD: meu_buzufba
     volumes:
-      - "db:/var/lib/postgresql/data"
+      - mongodb_data:/data/db
     networks:
-      - meu-buzufba
+      - meu_buzufba_network
 
+  mongo-express:
+    image: mongo-express
+    restart: unless-stopped
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: meu_buzufba
+      ME_CONFIG_MONGODB_ADMINPASSWORD: meu_buzufba
+      ME_CONFIG_MONGODB_URL: mongodb://meu_buzufba:meu_buzufba@mongo:27017/
+      ME_CONFIG_BASICAUTH: false
+
+    networks:
+      - meu_buzufba_network
 networks:
-  meu-buzufba:
-    driver: bridge
+  meu_buzufba_network:
 
 volumes:
-  db:
+  mongodb_data:
