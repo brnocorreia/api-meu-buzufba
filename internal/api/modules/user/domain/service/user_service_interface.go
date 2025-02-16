@@ -17,10 +17,6 @@ type userService struct {
 }
 
 type UserService interface {
-	CreateUser(domain.UserDomainInterface) (
-		domain.UserDomainInterface,
-		*rest_err.RestErr)
-
 	FindUserByEmail(
 		email string,
 	) (domain.UserDomainInterface, *rest_err.RestErr)
@@ -28,10 +24,6 @@ type UserService interface {
 	FindUserByID(
 		id string,
 	) (domain.UserDomainInterface, *rest_err.RestErr)
-
-	Login(
-		userDomain domain.UserDomainInterface,
-	) (domain.UserDomainInterface, string, *rest_err.RestErr)
 
 	UpdateUser(string, domain.UserDomainInterface) *rest_err.RestErr
 }

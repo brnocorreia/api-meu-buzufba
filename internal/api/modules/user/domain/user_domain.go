@@ -1,9 +1,9 @@
 package domain
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type userDomain struct {
@@ -57,8 +57,14 @@ func (ud *userDomain) SetUpdatedAt(updatedAt time.Time) {
 }
 
 func (ud *userDomain) EncryptPassword() {
-	hash := md5.New()
-	defer hash.Reset()
-	hash.Write([]byte(ud.password))
-	ud.password = hex.EncodeToString(hash.Sum(nil))
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(ud.password), bcrypt.DefaultCost)
+	if err != nil {
+		return
+	}
+	ud.password = string(hashedPassword)
+}
+
+func (ud *userDomain) ComparePassword(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(ud.password), []byte(password))
+	return err == nil
 }

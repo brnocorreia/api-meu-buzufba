@@ -17,8 +17,6 @@ func InitUserRoutes(router *gin.RouterGroup, db *mongo.Database) {
 	{
 		userGroup.GET("/:userId", userController.FindUserByID)
 		userGroup.GET("/email/:userEmail", userController.FindUserByEmail)
-		userGroup.POST("/", userController.CreateUser)
 		userGroup.PUT("/:userId", userController.UpdateUser)
-		userGroup.POST("/login", userController.Login)
 	}
 }
