@@ -2,8 +2,6 @@ package domain
 
 import (
 	"time"
-
-	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/rest_err"
 )
 
 type UserDomainInterface interface {
@@ -20,7 +18,6 @@ type UserDomainInterface interface {
 	SetUpdatedAt(updatedAt time.Time)
 
 	EncryptPassword()
-	GenerateToken() (string, *rest_err.RestErr)
 }
 
 func NewUserDomain(
@@ -35,6 +32,20 @@ func NewUserDomain(
 		lastName:  lastName,
 		email:     email,
 		password:  password,
+	}
+}
+
+func NewUserTokenDomain(
+	id string,
+	email string,
+	firstName string,
+	lastName string,
+) UserDomainInterface {
+	return &userDomain{
+		id:        id,
+		email:     email,
+		firstName: firstName,
+		lastName:  lastName,
 	}
 }
 
