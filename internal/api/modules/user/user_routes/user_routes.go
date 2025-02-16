@@ -1,4 +1,4 @@
-package routes
+package user_routes
 
 import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/controller"

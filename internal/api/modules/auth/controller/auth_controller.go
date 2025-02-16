@@ -29,7 +29,8 @@ type authControllerInterface struct {
 }
 
 func (ac *authControllerInterface) SignIn(c *gin.Context) {
-
+	restErr := rest_err.NewNotImplementedError("Endpoint not implemented yet")
+	c.JSON(restErr.Code, restErr)
 }
 
 func (ac *authControllerInterface) SignUp(c *gin.Context) {
@@ -67,9 +68,11 @@ func (ac *authControllerInterface) SignUp(c *gin.Context) {
 }
 
 func (ac *authControllerInterface) SignOut(c *gin.Context) {
-
+	restErr := rest_err.NewNotImplementedError("Endpoint not implemented yet")
+	c.JSON(restErr.Code, restErr)
 }
 
 func (ac *authControllerInterface) VerifyEmail(c *gin.Context) {
-
+	restErr := rest_err.NewNotImplementedError("Endpoint not implemented yet")
+	c.JSON(restErr.Code, restErr)
 }
