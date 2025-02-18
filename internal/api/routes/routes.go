@@ -8,7 +8,7 @@ import (
 )
 
 func InitRoutes(r *gin.Engine, db *mongo.Database) {
-	v1 := r.Group("api/v1")
+	v1 := r.Group("/v1")
 	user_routes.InitUserRoutes(v1, db)
 	auth_routes.InitAuthRoutes(v1, db)
 }

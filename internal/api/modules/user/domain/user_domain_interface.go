@@ -18,6 +18,7 @@ type UserDomainInterface interface {
 	SetUpdatedAt(updatedAt time.Time)
 
 	EncryptPassword()
+	ComparePassword(password string) bool
 }
 
 func NewUserDomain(

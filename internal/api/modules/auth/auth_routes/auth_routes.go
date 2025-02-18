@@ -20,6 +20,6 @@ func InitAuthRoutes(router *gin.RouterGroup, db *mongo.Database) {
 		authGroup.POST("/signin", authController.SignIn)
 		authGroup.POST("/signup", authController.SignUp)
 		authGroup.POST("/signout", authController.SignOut)
-		authGroup.POST("/verify-email", authController.VerifyEmail)
+		authGroup.POST("/verify-email", service.VerifyTokenMiddleware, authController.VerifyEmail)
 	}
 }

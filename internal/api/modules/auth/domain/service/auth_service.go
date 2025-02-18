@@ -39,7 +39,7 @@ type AuthService interface {
 		password string,
 	) (string, *rest_err.RestErr)
 
-	SignOut() *rest_err.RestErr
+	SignOut(c *gin.Context) *rest_err.RestErr
 
 	VerifyEmail(
 		email, token string,
@@ -65,10 +65,25 @@ func (as *authService) SignUp(userDomain domain.UserDomainInterface) (domain.Use
 }
 
 func (as *authService) SignIn(email, password string) (token string, err *rest_err.RestErr) {
-	return "", nil
+	user, err := as.findUserByEmail(email)
+	if err != nil {
+		return "", err
+	}
+
+	if !user.ComparePassword(password) {
+		return "", rest_err.NewUnauthorizedRequestError("invalid credentials")
+	}
+
+	token, err = as.GenerateToken(user)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("Bearer %s", token), nil
 }
 
-func (as *authService) SignOut() *rest_err.RestErr {
+func (as *authService) SignOut(c *gin.Context) *rest_err.RestErr {
+	c.SetCookie("access_token", "", -1, "/", "", false, true)
 	return nil
 }
 
@@ -89,15 +104,14 @@ func (as *authService) GenerateToken(ud domain.UserDomainInterface) (string, *re
 		"first_name": ud.GetFirstName(),
 		"last_name":  ud.GetLastName(),
 		"exp":        time.Now().Add(time.Hour * 24 * 30).Unix(),
+		"iat":        time.Now().Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
-		return "", rest_err.NewInternalServerError(
-			fmt.Sprintf("error trying to generate jwt token, err=%s", err.Error()),
-		)
+		return "", rest_err.NewInternalServerError("error trying to generate jwt token")
 	}
 	return tokenString, nil
 }
@@ -153,6 +167,7 @@ func VerifyTokenMiddleware(c *gin.Context) {
 	}
 
 	userDomain := domain.NewUserTokenDomain(claims["id"].(string), claims["email"].(string), claims["first_name"].(string), claims["last_name"].(string))
+	c.Set("user_domain", userDomain)
 
 	logger.Info(fmt.Sprintf("User authenticated: %#v", userDomain))
 }
