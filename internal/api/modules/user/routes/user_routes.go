@@ -1,6 +1,7 @@
 package routes
 
 import (
+	authService "github.com/brnocorreia/api-meu-buzufba/internal/api/modules/auth/domain/service"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/controller"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain/repository"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain/service"
@@ -15,8 +16,8 @@ func InitUserRoutes(router *gin.RouterGroup, db *mongo.Database) {
 
 	userGroup := router.Group("users")
 	{
-		userGroup.GET("/:userId", userController.FindUserByID)
-		userGroup.GET("/email/:userEmail", userController.FindUserByEmail)
-		userGroup.PUT("/:userId", userController.UpdateUser)
+		userGroup.GET("/:userId", authService.VerifyTokenMiddleware, userController.FindUserByID)
+		userGroup.GET("/email/:userEmail", authService.VerifyTokenMiddleware, userController.FindUserByEmail)
+		userGroup.PUT("/:userId", authService.VerifyTokenMiddleware, userController.UpdateUser)
 	}
 }
