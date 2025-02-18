@@ -1,4 +1,4 @@
-package auth_routes
+package routes
 
 import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/auth/controller"
