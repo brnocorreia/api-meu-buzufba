@@ -4,3 +4,9 @@ run:
 build:
 	go build -o api cmd/api/main.go
 
+mongo:
+	docker compose up -d
+
+mongo-stop:
+	docker compose down
+
