@@ -9,7 +9,9 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain/repository"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/logger"
+	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/mail"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/rest_err"
+	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -60,8 +62,29 @@ func (as *authService) SignUp(userDomain domain.UserDomainInterface) (domain.Use
 		return nil, err
 	}
 
-	return user, nil
+	logger.Info("user created in database", zap.String("user_id", user.GetID()))
 
+	html, htmlErr := mail.ParseWelcomeTemplate(mail.WelcomeEmailData{
+		Name:         user.GetFirstName(),
+		DashboardURL: "https://buzufba.condosnap.com.br",
+	})
+	if htmlErr != nil {
+		logger.Error("error parsing welcome template", htmlErr, zap.String("user_id", user.GetID()))
+	}
+
+	mailId, mailErr := mail.Send(mail.EmailParams{
+		To:      user.GetEmail(),
+		Subject: "Bem-vindo ao Meu Buzufba",
+		Html:    html,
+	})
+	if mailErr != nil {
+		logger.Error("error sending welcome email", mailErr, zap.String("user_id", user.GetID()))
+		return user, nil
+	}
+
+	logger.Info("welcome email sent", zap.String("mail_id", mailId), zap.String("user_id", user.GetID()))
+
+	return user, nil
 }
 
 func (as *authService) SignIn(email, password string) (token string, err *rest_err.RestErr) {

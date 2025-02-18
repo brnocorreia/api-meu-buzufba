@@ -11,6 +11,7 @@ import (
 
 	"github.com/brnocorreia/api-meu-buzufba/internal/api"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/database/mongodb"
+	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/mail"
 	"github.com/joho/godotenv"
 )
 
@@ -25,6 +26,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error connecting to MongoDB: error %s \n", err)
 	}
+
+	mail.InitMailer(os.Getenv("RESEND_API_KEY"))
 
 	handler := api.NewHandler(db)
 

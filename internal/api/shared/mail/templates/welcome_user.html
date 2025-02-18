@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .welcome-text {
+            color: #2d3748;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .content {
+            color: #4a5568;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: white;
+            color: #4f46e5;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 20px 0;
+            border: 2px solid #4f46e5;
+        }
+        .footer {
+            text-align: center;
+            color: #718096;
+            font-size: 14px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="welcome-text">Bem-vindo(a) ao Meu Buzufba, {{.Name}}! 🎉</h1>
+        </div>
+        
+        <div class="content">
+            <p>Estamos felizes em ter você como parte da nossa comunidade!</p>
+            
+            <p>Nosso objetivo é tornar a experiência de uso do Buzufba mais fácil e prática para você.</p>
+            
+            <p>Usando o Meu Buzufba você pode:</p>
+            <ul>
+                <li>Acompanhar as rotas e horários dos ônibus;</li>
+                <li>Ter acesso a avisos importantes sobre o Buzufba criados pelos próprios usuários;</li>
+                <li>Compartilhar suas experiências e dicas com outros usuários;</li>
+                <li>E muito mais!</li>
+            </ul>
+            
+            <center>
+                <a href="{{.DashboardURL}}" class="button">Começe a usar</a>
+            </center>
+            
+            <p>Se precisar de ajuda e/ou tiver sugestões, entre em contato conosco através do Telegram!</p>
+            
+            <p>Atenciosamente,<br>O time do Meu Buzufba</p>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 Meu Buzufba. Todos os direitos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>
