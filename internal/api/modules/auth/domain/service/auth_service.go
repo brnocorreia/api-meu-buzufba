@@ -64,25 +64,29 @@ func (as *authService) SignUp(userDomain domain.UserDomainInterface) (domain.Use
 
 	logger.Info("user created in database", zap.String("user_id", user.GetID()))
 
-	html, htmlErr := mail.ParseWelcomeTemplate(mail.WelcomeEmailData{
-		Name:         user.GetFirstName(),
-		DashboardURL: "https://buzufba.condosnap.com.br",
-	})
-	if htmlErr != nil {
-		logger.Error("error parsing welcome template", htmlErr, zap.String("user_id", user.GetID()))
-	}
+	// Go Routine to send email asynchronously
+	go func() {
+		html, htmlErr := mail.ParseWelcomeTemplate(mail.WelcomeEmailData{
+			Name:         user.GetFirstName(),
+			DashboardURL: "https://buzufba.condosnap.com.br",
+		})
+		if htmlErr != nil {
+			logger.Error("error parsing welcome template", htmlErr, zap.String("user_id", user.GetID()))
+			return
+		}
 
-	mailId, mailErr := mail.Send(mail.EmailParams{
-		To:      user.GetEmail(),
-		Subject: "Bem-vindo ao Meu Buzufba",
-		Html:    html,
-	})
-	if mailErr != nil {
-		logger.Error("error sending welcome email", mailErr, zap.String("user_id", user.GetID()))
-		return user, nil
-	}
+		mailId, mailErr := mail.Send(mail.EmailParams{
+			To:      user.GetEmail(),
+			Subject: "Bem-vindo ao Meu Buzufba",
+			Html:    html,
+		})
+		if mailErr != nil {
+			logger.Error("error sending welcome email", mailErr, zap.String("user_id", user.GetID()))
+			return
+		}
 
-	logger.Info("welcome email sent", zap.String("mail_id", mailId), zap.String("user_id", user.GetID()))
+		logger.Info("welcome email sent", zap.String("mail_id", mailId), zap.String("user_id", user.GetID()))
+	}()
 
 	return user, nil
 }
