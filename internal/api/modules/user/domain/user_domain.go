@@ -7,13 +7,14 @@ import (
 )
 
 type userDomain struct {
-	id        string
-	firstName string
-	lastName  string
-	email     string
-	password  string
-	createdAt time.Time
-	updatedAt time.Time
+	id         string
+	firstName  string
+	lastName   string
+	email      string
+	password   string
+	isVerified bool
+	createdAt  time.Time
+	updatedAt  time.Time
 }
 
 func (ud *userDomain) GetID() string {
@@ -36,6 +37,10 @@ func (ud *userDomain) GetPassword() string {
 	return ud.password
 }
 
+func (ud *userDomain) GetIsVerified() bool {
+	return ud.isVerified
+}
+
 func (ud *userDomain) GetCreatedAt() time.Time {
 	return ud.createdAt
 }
@@ -46,6 +51,10 @@ func (ud *userDomain) GetUpdatedAt() time.Time {
 
 func (ud *userDomain) SetID(id string) {
 	ud.id = id
+}
+
+func (ud *userDomain) SetIsVerified(isVerified bool) {
+	ud.isVerified = isVerified
 }
 
 func (ud *userDomain) SetCreatedAt(createdAt time.Time) {

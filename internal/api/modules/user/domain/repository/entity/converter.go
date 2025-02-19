@@ -4,12 +4,13 @@ import "github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain"
 
 func ConvertDomainToEntity(domain domain.UserDomainInterface) *User {
 	return &User{
-		FirstName: domain.GetFirstName(),
-		LastName:  domain.GetLastName(),
-		Email:     domain.GetEmail(),
-		Password:  domain.GetPassword(),
-		CreatedAt: domain.GetCreatedAt(),
-		UpdatedAt: domain.GetUpdatedAt(),
+		FirstName:  domain.GetFirstName(),
+		LastName:   domain.GetLastName(),
+		Email:      domain.GetEmail(),
+		Password:   domain.GetPassword(),
+		IsVerified: domain.GetIsVerified(),
+		CreatedAt:  domain.GetCreatedAt(),
+		UpdatedAt:  domain.GetUpdatedAt(),
 	}
 }
 
@@ -19,6 +20,7 @@ func ConvertEntityToDomain(entity *User) domain.UserDomainInterface {
 		entity.LastName,
 		entity.Email,
 		entity.Password,
+		entity.IsVerified,
 	)
 
 	domain.SetID(entity.ID.Hex())

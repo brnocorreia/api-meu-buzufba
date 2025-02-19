@@ -67,6 +67,7 @@ func (ac *authControllerInterface) SignUp(c *gin.Context) {
 		signUpRequest.LastName,
 		signUpRequest.Email,
 		signUpRequest.Password,
+		false,
 	)
 
 	user, err := ac.service.SignUp(domain)
@@ -76,12 +77,13 @@ func (ac *authControllerInterface) SignUp(c *gin.Context) {
 	}
 
 	response := userResponse.UserResponse{
-		ID:        user.GetID(),
-		FirstName: user.GetFirstName(),
-		LastName:  user.GetLastName(),
-		Email:     user.GetEmail(),
-		CreatedAt: user.GetCreatedAt(),
-		UpdatedAt: user.GetUpdatedAt(),
+		ID:         user.GetID(),
+		FirstName:  user.GetFirstName(),
+		LastName:   user.GetLastName(),
+		Email:      user.GetEmail(),
+		IsVerified: user.GetIsVerified(),
+		CreatedAt:  user.GetCreatedAt(),
+		UpdatedAt:  user.GetUpdatedAt(),
 	}
 
 	c.JSON(http.StatusCreated, response)

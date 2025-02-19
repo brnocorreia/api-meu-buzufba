@@ -10,10 +10,12 @@ type UserDomainInterface interface {
 	GetLastName() string
 	GetEmail() string
 	GetPassword() string
+	GetIsVerified() bool
 	GetCreatedAt() time.Time
 	GetUpdatedAt() time.Time
 
 	SetID(id string)
+	SetIsVerified(isVerified bool)
 	SetCreatedAt(createdAt time.Time)
 	SetUpdatedAt(updatedAt time.Time)
 
@@ -26,13 +28,14 @@ func NewUserDomain(
 	lastName string,
 	email string,
 	password string,
-
+	isVerified bool,
 ) UserDomainInterface {
 	return &userDomain{
-		firstName: firstName,
-		lastName:  lastName,
-		email:     email,
-		password:  password,
+		firstName:  firstName,
+		lastName:   lastName,
+		email:      email,
+		password:   password,
+		isVerified: isVerified,
 	}
 }
 

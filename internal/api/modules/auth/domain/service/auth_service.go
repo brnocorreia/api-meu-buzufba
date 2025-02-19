@@ -126,12 +126,13 @@ func (as *authService) GenerateToken(ud domain.UserDomainInterface) (string, *re
 	secret := os.Getenv(JWT_SECRET_KEY)
 
 	claims := jwt.MapClaims{
-		"id":         ud.GetID(),
-		"email":      ud.GetEmail(),
-		"first_name": ud.GetFirstName(),
-		"last_name":  ud.GetLastName(),
-		"exp":        time.Now().Add(time.Hour * 24 * 30).Unix(),
-		"iat":        time.Now().Unix(),
+		"id":          ud.GetID(),
+		"email":       ud.GetEmail(),
+		"first_name":  ud.GetFirstName(),
+		"last_name":   ud.GetLastName(),
+		"is_verified": ud.GetIsVerified(),
+		"exp":         time.Now().Add(time.Hour * 24 * 30).Unix(),
+		"iat":         time.Now().Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
