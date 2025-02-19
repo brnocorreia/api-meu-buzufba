@@ -6,8 +6,9 @@ import (
 	"strings"
 	"time"
 
+	authRepository "github.com/brnocorreia/api-meu-buzufba/internal/api/modules/auth/domain/repository"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain"
-	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain/repository"
+	userRepository "github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain/repository"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/logger"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/mail"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/rest_err"
@@ -22,13 +23,18 @@ var (
 )
 
 func NewAuthService(
-	userRepository repository.UserRepository,
+	userRepository userRepository.UserRepository,
+	authRepository authRepository.AuthRepository,
 ) AuthService {
-	return &authService{userRepository}
+	return &authService{
+		userRepository,
+		authRepository,
+	}
 }
 
 type authService struct {
-	userRepository repository.UserRepository
+	userRepository userRepository.UserRepository
+	authRepository authRepository.AuthRepository
 }
 
 type AuthService interface {
@@ -44,7 +50,7 @@ type AuthService interface {
 	SignOut(c *gin.Context) *rest_err.RestErr
 
 	VerifyEmail(
-		email, token string,
+		token string,
 	) *rest_err.RestErr
 }
 
@@ -114,7 +120,15 @@ func (as *authService) SignOut(c *gin.Context) *rest_err.RestErr {
 	return nil
 }
 
-func (as *authService) VerifyEmail(email, token string) *rest_err.RestErr {
+func (as *authService) VerifyEmail(token string) *rest_err.RestErr {
+	// 1. Get the verify token entity
+
+	// 2. Check if the token is valid
+	// 3. Check if the token is expired
+	// 4. Check if the token is already used
+	// 5. If all is valid, set the user as verified
+	// 6. Return nil
+
 	return nil
 }
 

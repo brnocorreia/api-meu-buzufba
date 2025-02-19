@@ -23,6 +23,7 @@ type AuthControllerInterface interface {
 	SignUp(c *gin.Context)
 	SignOut(c *gin.Context)
 	VerifyEmail(c *gin.Context)
+	RequestVerificationEmail(c *gin.Context)
 }
 
 type authControllerInterface struct {
@@ -100,6 +101,24 @@ func (ac *authControllerInterface) SignOut(c *gin.Context) {
 }
 
 func (ac *authControllerInterface) VerifyEmail(c *gin.Context) {
+	token := c.Query("token")
+
+	if token == "" {
+		restErr := rest_err.NewBadRequestError("token and code are required")
+		c.JSON(restErr.Code, restErr)
+		return
+	}
+
+	err := ac.service.VerifyEmail(token)
+	if err != nil {
+		c.JSON(err.Code, err)
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{})
+}
+
+func (ac *authControllerInterface) RequestVerificationEmail(c *gin.Context) {
 	restErr := rest_err.NewNotImplementedError("Endpoint not implemented yet")
 	c.JSON(restErr.Code, restErr)
 }
