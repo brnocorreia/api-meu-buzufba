@@ -68,8 +68,8 @@ func (ac *authControllerInterface) SignUp(c *gin.Context) {
 		signUpRequest.LastName,
 		signUpRequest.Email,
 		signUpRequest.Password,
-		false,
 	)
+	domain.SetIsVerified(false)
 
 	user, err := ac.service.SignUp(domain)
 	if err != nil {

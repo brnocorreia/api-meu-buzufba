@@ -11,8 +11,8 @@ const (
 )
 
 type WelcomeEmailData struct {
-	Name         string
-	DashboardURL string
+	Name            string
+	VerificationURL string
 }
 
 func ParseWelcomeTemplate(data WelcomeEmailData) (string, error) {

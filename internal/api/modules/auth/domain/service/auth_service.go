@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	authRepository "github.com/brnocorreia/api-meu-buzufba/internal/api/modules/auth/domain/repository"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain"
 	userRepository "github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain/repository"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/logger"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/mail"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/rest_err"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
@@ -24,17 +24,14 @@ var (
 
 func NewAuthService(
 	userRepository userRepository.UserRepository,
-	authRepository authRepository.AuthRepository,
 ) AuthService {
 	return &authService{
 		userRepository,
-		authRepository,
 	}
 }
 
 type authService struct {
 	userRepository userRepository.UserRepository
-	authRepository authRepository.AuthRepository
 }
 
 type AuthService interface {
@@ -60,6 +57,14 @@ func (as *authService) SignUp(userDomain domain.UserDomainInterface) (domain.Use
 		return nil, rest_err.NewBadRequestError("Email already registered in another account")
 	}
 
+	// Generate verification info
+	verificationToken := uuid.New().String()
+	verificationExpires := time.Now().Add(time.Hour * 24 * 3)
+	userDomain.SetVerificationToken(verificationToken)
+	userDomain.SetVerificationExpires(verificationExpires)
+
+	userDomain.EncryptPassword()
+	userDomain.SetCreatedAt(time.Now())
 	userDomain.EncryptPassword()
 	userDomain.SetCreatedAt(time.Now())
 	userDomain.SetUpdatedAt(time.Now())
@@ -72,9 +77,11 @@ func (as *authService) SignUp(userDomain domain.UserDomainInterface) (domain.Use
 
 	// Go Routine to send email asynchronously
 	go func() {
+		verificationURL := fmt.Sprintf("%s/auth/verify-email?token=%s", os.Getenv("FRONTEND_URL"), user.GetVerificationToken())
+
 		html, htmlErr := mail.ParseWelcomeTemplate(mail.WelcomeEmailData{
-			Name:         user.GetFirstName(),
-			DashboardURL: "https://buzufba.condosnap.com.br",
+			Name:            user.GetFirstName(),
+			VerificationURL: verificationURL,
 		})
 		if htmlErr != nil {
 			logger.Error("error parsing welcome template", htmlErr, zap.String("user_id", user.GetID()))

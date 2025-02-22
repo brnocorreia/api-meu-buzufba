@@ -7,14 +7,17 @@ import (
 )
 
 type userDomain struct {
-	id         string
-	firstName  string
-	lastName   string
-	email      string
-	password   string
-	isVerified bool
-	createdAt  time.Time
-	updatedAt  time.Time
+	id                  string
+	firstName           string
+	lastName            string
+	email               string
+	password            string
+	isVerified          bool
+	verificationToken   string
+	verificationExpires time.Time
+	emailVerifiedAt     *time.Time
+	createdAt           time.Time
+	updatedAt           time.Time
 }
 
 func (ud *userDomain) GetID() string {
@@ -41,6 +44,18 @@ func (ud *userDomain) GetIsVerified() bool {
 	return ud.isVerified
 }
 
+func (ud *userDomain) GetVerificationToken() string {
+	return ud.verificationToken
+}
+
+func (ud *userDomain) GetVerificationExpires() time.Time {
+	return ud.verificationExpires
+}
+
+func (ud *userDomain) GetEmailVerifiedAt() *time.Time {
+	return ud.emailVerifiedAt
+}
+
 func (ud *userDomain) GetCreatedAt() time.Time {
 	return ud.createdAt
 }
@@ -55,6 +70,18 @@ func (ud *userDomain) SetID(id string) {
 
 func (ud *userDomain) SetIsVerified(isVerified bool) {
 	ud.isVerified = isVerified
+}
+
+func (ud *userDomain) SetVerificationToken(verificationToken string) {
+	ud.verificationToken = verificationToken
+}
+
+func (ud *userDomain) SetVerificationExpires(verificationExpires time.Time) {
+	ud.verificationExpires = verificationExpires
+}
+
+func (ud *userDomain) SetEmailVerifiedAt(emailVerifiedAt *time.Time) {
+	ud.emailVerifiedAt = emailVerifiedAt
 }
 
 func (ud *userDomain) SetCreatedAt(createdAt time.Time) {

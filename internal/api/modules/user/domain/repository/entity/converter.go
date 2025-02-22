@@ -20,12 +20,12 @@ func ConvertEntityToDomain(entity *User) domain.UserDomainInterface {
 		entity.LastName,
 		entity.Email,
 		entity.Password,
-		entity.IsVerified,
 	)
 
 	domain.SetID(entity.ID.Hex())
 	domain.SetCreatedAt(entity.CreatedAt)
 	domain.SetUpdatedAt(entity.UpdatedAt)
+	domain.SetIsVerified(entity.IsVerified)
 
 	return domain
 }

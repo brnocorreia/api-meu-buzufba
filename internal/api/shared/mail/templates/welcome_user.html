@@ -56,6 +56,11 @@
             font-size: 14px;
             margin-top: 30px;
         }
+        .highlighted {
+          font-size: 20px;
+          font-weight: bold;
+          text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -77,8 +82,11 @@
                 <li>E muito mais!</li>
             </ul>
             
+            <p class="highlighted">Verifique seu email agora mesmo!</p>
+            <p>Ao verificar seu email você garante acesso a <strong>criação de avisos</strong> e <strong>atualizações sobre rotas, paradas e horários</strong>. A verificação visa tornar nosso ambiente colaborativo mais saudável e seguro!</p>
+            
             <center>
-                <a href="{{.DashboardURL}}" class="button">Começe a usar</a>
+                <a href="{{.DashboardURL}}/auth/verify-email?token={{.VerificationToken}}" class="button">Verificar email</a>
             </center>
             
             <p>Se precisar de ajuda e/ou tiver sugestões, entre em contato conosco através do Telegram!</p>
