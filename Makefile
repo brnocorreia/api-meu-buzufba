@@ -4,6 +4,9 @@ run:
 build:
 	go build -o api cmd/api/main.go
 
+docker-build:
+	docker compose build
+
 docker:
 	docker compose up -d
 

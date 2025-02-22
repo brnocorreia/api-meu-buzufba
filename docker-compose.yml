@@ -40,6 +40,23 @@ services:
     networks:
       - meu_buzufba_network
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    environment:
+      MONGODB_URL: mongodb://meu_buzufba:meu_buzufba@mongo:27017/
+      MONGODB_DATABASE: meu_buzufba
+      JWT_SECRET_KEY: meu_secret_buzufba
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      FRONTEND_URL: http://localhost:3000
+      REDIS_URL: redis://default:meu-buzufba@redis:6379
+    networks:
+      - meu_buzufba_network
+
 networks:
   meu_buzufba_network:
     driver: bridge
