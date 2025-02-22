@@ -18,7 +18,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		panic(err)
+		log.Println("No .env file found, using system environment variables")
 	}
 
 	ctx := context.Background()
