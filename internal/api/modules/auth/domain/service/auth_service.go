@@ -11,7 +11,6 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/logger"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/mail"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/rest_err"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/gin-gonic/gin"
@@ -57,14 +56,8 @@ func (as *authService) SignUp(userDomain domain.UserDomainInterface) (domain.Use
 		return nil, rest_err.NewBadRequestError("Email already registered in another account")
 	}
 
-	// Generate verification info
-	verificationToken := uuid.New().String()
-	verificationExpires := time.Now().Add(time.Hour * 24 * 3)
-	userDomain.SetVerificationToken(verificationToken)
-	userDomain.SetVerificationExpires(verificationExpires)
+	userDomain.GenerateVerificationInfo()
 
-	userDomain.EncryptPassword()
-	userDomain.SetCreatedAt(time.Now())
 	userDomain.EncryptPassword()
 	userDomain.SetCreatedAt(time.Now())
 	userDomain.SetUpdatedAt(time.Now())
@@ -128,15 +121,26 @@ func (as *authService) SignOut(c *gin.Context) *rest_err.RestErr {
 }
 
 func (as *authService) VerifyEmail(token string) *rest_err.RestErr {
-	// 1. Get the verify token entity
+	user, err := as.userRepository.FindUserByVerificationToken(token)
+	if err != nil {
+		return err
+	}
 
-	// 2. Check if the token is valid
-	// 3. Check if the token is expired
-	// 4. Check if the token is already used
-	// 5. If all is valid, set the user as verified
-	// 6. Return nil
+	if user.GetVerificationExpires().Before(time.Now()) {
+		return rest_err.NewBadRequestError("verification token expired")
+	}
 
-	return nil
+	if user.GetIsVerified() {
+		return rest_err.NewBadRequestError("verification token already used")
+	}
+
+	now := time.Now()
+	user.SetIsVerified(true)
+	user.SetEmailVerifiedAt(&now)
+	user.SetVerificationToken("")
+	user.SetUpdatedAt(time.Now())
+
+	return as.userRepository.UpdateUser(user.GetID(), user)
 }
 
 func (as *authService) findUserByEmail(email string) (domain.UserDomainInterface, *rest_err.RestErr) {

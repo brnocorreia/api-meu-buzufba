@@ -104,7 +104,7 @@ func (ac *authControllerInterface) VerifyEmail(c *gin.Context) {
 	token := c.Query("token")
 
 	if token == "" {
-		restErr := rest_err.NewBadRequestError("token and code are required")
+		restErr := rest_err.NewBadRequestError("verification token is required")
 		c.JSON(restErr.Code, restErr)
 		return
 	}

@@ -27,6 +27,7 @@ type UserDomainInterface interface {
 
 	EncryptPassword()
 	ComparePassword(password string) bool
+	GenerateVerificationInfo()
 }
 
 func NewUserDomain(

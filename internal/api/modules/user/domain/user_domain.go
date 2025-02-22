@@ -3,6 +3,7 @@ package domain
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -103,4 +104,11 @@ func (ud *userDomain) EncryptPassword() {
 func (ud *userDomain) ComparePassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(ud.password), []byte(password))
 	return err == nil
+}
+
+func (ud *userDomain) GenerateVerificationInfo() {
+	ud.verificationToken = uuid.New().String()
+	ud.verificationExpires = time.Now().Add(time.Hour * 24 * 3)
+	ud.emailVerifiedAt = nil
+	ud.isVerified = false
 }
