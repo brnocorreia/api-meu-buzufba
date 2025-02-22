@@ -11,6 +11,7 @@ import (
 
 	"github.com/brnocorreia/api-meu-buzufba/internal/api"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/database/mongodb"
+	"github.com/brnocorreia/api-meu-buzufba/internal/api/database/redis"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/mail"
 	"github.com/joho/godotenv"
 )
@@ -26,10 +27,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error connecting to MongoDB: error %s \n", err)
 	}
+	defer db.Client().Disconnect(ctx)
+
+	redis, err := redis.NewRedisConnection(ctx)
+	if err != nil {
+		log.Fatalf("Error connecting to Redis: error %s \n", err)
+	}
+	defer redis.Close()
 
 	mail.InitMailer(os.Getenv("RESEND_API_KEY"))
 
-	handler := api.NewHandler(db)
+	handler := api.NewHandler(db, redis)
 
 	go func() {
 		if err := http.ListenAndServe(":8080", handler); err != nil {

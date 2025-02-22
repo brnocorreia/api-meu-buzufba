@@ -8,13 +8,15 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/auth/domain/service"
 	userResponse "github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/controller/response"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain"
+	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/rate_limiter"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/shared/rest_err"
 	"github.com/gin-gonic/gin"
 )
 
-func NewAuthCoontrollerInterface(service service.AuthService) AuthControllerInterface {
+func NewAuthCoontrollerInterface(service service.AuthService, rateLimiter *rate_limiter.RateLimiter) AuthControllerInterface {
 	return &authControllerInterface{
-		service: service,
+		service:     service,
+		rateLimiter: rateLimiter,
 	}
 }
 
@@ -27,7 +29,8 @@ type AuthControllerInterface interface {
 }
 
 type authControllerInterface struct {
-	service service.AuthService
+	service     service.AuthService
+	rateLimiter *rate_limiter.RateLimiter
 }
 
 func (ac *authControllerInterface) SignIn(c *gin.Context) {
@@ -119,6 +122,33 @@ func (ac *authControllerInterface) VerifyEmail(c *gin.Context) {
 }
 
 func (ac *authControllerInterface) RequestVerificationEmail(c *gin.Context) {
-	restErr := rest_err.NewNotImplementedError("Endpoint not implemented yet")
-	c.JSON(restErr.Code, restErr)
+	userDomainFromContext, ok := c.Get("user_domain")
+	if !ok || userDomainFromContext == nil {
+		restErr := rest_err.NewBadRequestError("user not found")
+		c.JSON(restErr.Code, restErr)
+		return
+	}
+
+	userDomain := userDomainFromContext.(domain.UserDomainInterface)
+
+	allowed, redisErr := ac.rateLimiter.IsAllowed(c.Request.Context(), userDomain.GetEmail())
+	if redisErr != nil {
+		restErr := rest_err.NewInternalServerError("error checking rate limit")
+		c.JSON(restErr.Code, restErr)
+		return
+	}
+
+	if !allowed {
+		restErr := rest_err.NewTooManyRequestsError("too many requests")
+		c.JSON(restErr.Code, restErr)
+		return
+	}
+
+	err := ac.service.RequestVerificationEmail(userDomain.GetEmail())
+	if err != nil {
+		c.JSON(err.Code, err)
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }

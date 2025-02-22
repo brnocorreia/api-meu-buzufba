@@ -83,3 +83,11 @@ func NewNotImplementedError(message string) *RestErr {
 		Code:    http.StatusNotImplemented,
 	}
 }
+
+func NewTooManyRequestsError(message string) *RestErr {
+	return &RestErr{
+		Message: message,
+		Err:     "too_many_requests",
+		Code:    http.StatusTooManyRequests,
+	}
+}
