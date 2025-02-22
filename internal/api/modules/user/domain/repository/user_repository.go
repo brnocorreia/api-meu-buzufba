@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain"
 	"github.com/brnocorreia/api-meu-buzufba/internal/api/modules/user/domain/repository/entity"
@@ -77,6 +78,7 @@ func (ur *userRepository) UpdateUser(
 ) *rest_err.RestErr {
 	collection := ur.db.Collection(USER_COLLECTION)
 
+	userDomain.SetUpdatedAt(time.Now())
 	value := entity.ConvertDomainToEntity(userDomain)
 
 	objectId, err := primitive.ObjectIDFromHex(userId)
@@ -130,8 +132,13 @@ func (ur *userRepository) FindUserByID(
 
 	userEntity := &entity.User{}
 
-	filter := bson.D{{Key: "_id", Value: id}}
-	err := collection.FindOne(context.Background(), filter).Decode(userEntity)
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, rest_err.NewBadRequestError("invalid user id")
+	}
+
+	filter := bson.D{{Key: "_id", Value: objectId}}
+	err = collection.FindOne(context.Background(), filter).Decode(userEntity)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, rest_err.NewNotFoundError("user not found with this id")

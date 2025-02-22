@@ -18,6 +18,8 @@ type UserDomainInterface interface {
 	GetUpdatedAt() time.Time
 
 	SetID(id string)
+	SetFirstName(firstName string)
+	SetLastName(lastName string)
 	SetIsVerified(isVerified bool)
 	SetVerificationToken(verificationToken string)
 	SetVerificationExpires(verificationExpires time.Time)
@@ -62,12 +64,10 @@ func NewUserTokenDomain(
 func NewUserUpdateDomain(
 	firstName string,
 	lastName string,
-	password string,
 ) UserDomainInterface {
 	return &userDomain{
 		firstName: firstName,
 		lastName:  lastName,
-		password:  password,
 	}
 }
 

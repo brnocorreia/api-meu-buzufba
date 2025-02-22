@@ -69,6 +69,14 @@ func (ud *userDomain) SetID(id string) {
 	ud.id = id
 }
 
+func (ud *userDomain) SetFirstName(firstName string) {
+	ud.firstName = firstName
+}
+
+func (ud *userDomain) SetLastName(lastName string) {
+	ud.lastName = lastName
+}
+
 func (ud *userDomain) SetIsVerified(isVerified bool) {
 	ud.isVerified = isVerified
 }

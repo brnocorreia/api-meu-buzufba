@@ -16,8 +16,6 @@ func InitUserRoutes(router *gin.RouterGroup, db *mongo.Database) {
 
 	userGroup := router.Group("users")
 	{
-		userGroup.GET("/:userId", authService.VerifyTokenMiddleware, userController.FindUserByID)
-		userGroup.GET("/email/:userEmail", authService.VerifyTokenMiddleware, userController.FindUserByEmail)
-		userGroup.PUT("/:userId", authService.VerifyTokenMiddleware, userController.UpdateUser)
+		userGroup.PUT("/update", authService.VerifyTokenMiddleware, userController.UpdateUser)
 	}
 }

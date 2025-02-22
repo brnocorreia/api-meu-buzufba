@@ -10,10 +10,9 @@ type UserRequest struct {
 type UserUpdateRequest struct {
 	FirstName string `json:"first_name" binding:"omitempty,min=3,max=100"`
 	LastName  string `json:"last_name" binding:"omitempty,min=3,max=100"`
-	Password  string `json:"password" binding:"omitempty,min=6"`
 }
 
-type UserLoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+type UserUpdatePasswordRequest struct {
+	Password    string `json:"password" binding:"required,min=6"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
 }
