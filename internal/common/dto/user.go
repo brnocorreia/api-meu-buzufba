@@ -16,6 +16,6 @@ type UserResponse struct {
 	Email     string    `json:"email"`
 	AvatarURL *string   `json:"avatar_url"`
 	Locked    bool      `json:"locked"`
-	Created   time.Time `json:"created"`
-	Updated   time.Time `json:"updated"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
