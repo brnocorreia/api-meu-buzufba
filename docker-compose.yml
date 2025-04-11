@@ -1,67 +1,31 @@
-version: "3"
 services:
-  mongo:
-    image: mongo
-    restart: unless-stopped
-    ports:
-      - 27017:27017
+  db:
+    container_name: ${APP_NAME}-postgres
+    image: bitnami/postgresql:latest
+    env_file: ".env"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: meu_buzufba
-      MONGO_INITDB_ROOT_PASSWORD: meu_buzufba
+      POSTGRESQL_DATABASE: ${DB_NAME}
+      POSTGRESQL_PASSWORD: ${DB_PASSWORD}
+      POSTGRESQL_USERNAME: ${DB_USER}
+      POSTGRES_HOST: ${DB_HOST}
+    ports:
+      - 5432:5432
     volumes:
-      - mongodb_data:/data/db
+      - meu-buzufba-data:/bitnami/postgresql
     networks:
-      - meu_buzufba_network
+      - meu-buzufba-network
 
-  mongo-express:
-    image: mongo-express
-    restart: unless-stopped
-    ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: meu_buzufba
-      ME_CONFIG_MONGODB_ADMINPASSWORD: meu_buzufba
-      ME_CONFIG_MONGODB_URL: mongodb://meu_buzufba:meu_buzufba@mongo:27017/
-      ME_CONFIG_BASICAUTH: false
-
-    networks:
-      - meu_buzufba_network
-
-  redis:
-    image: redis/redis-stack:latest
-    restart: unless-stopped
+  cache:
+    container_name: ${APP_NAME}-redis
+    image: redis:7.2-alpine
     ports:
       - 6379:6379
-      - 8001:8001
-    environment:
-      REDIS_ARGS: "--requirepass meu-buzufba"
-    volumes:
-      - redis:/data
     networks:
-      - meu_buzufba_network
-
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    ports:
-      - 8080:8080
-    environment:
-      MONGODB_URL: mongodb://meu_buzufba:meu_buzufba@mongo:27017/
-      MONGODB_DATABASE: meu_buzufba
-      JWT_SECRET_KEY: meu_secret_buzufba
-      RESEND_API_KEY: ${RESEND_API_KEY}
-      FRONTEND_URL: http://localhost:3000
-      REDIS_URL: redis://default:meu-buzufba@redis:6379
-    networks:
-      - meu_buzufba_network
-
-networks:
-  meu_buzufba_network:
-    driver: bridge
+      - meu-buzufba-network
 
 volumes:
-  mongodb_data:
-  redis:
-    driver: local
+  meu-buzufba-data:
+
+networks:
+  meu-buzufba-network:
+    driver: bridge
