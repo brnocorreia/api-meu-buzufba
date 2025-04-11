@@ -1,24 +1,25 @@
-FROM golang:1.24-alpine as builder
+FROM golang:1.24 AS builder
 
+# Add Maintainer info
+LABEL maintainer="Bruno Correia <dev.brunocorreia@gmail.com>"
+
+# Set the working directory in the container
 WORKDIR /app
 
+# Copy the go mod and sum files
 COPY go.mod go.sum ./
-
+# Download all the dependencies
 RUN go mod download
 
-COPY . .
+# Copy the project files
+COPY . /app
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o api cmd/api/main.go
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o main cmd/api/main.go
 
-FROM alpine:latest as runner
-
-WORKDIR /app
-
-COPY --from=builder /app/api .
-COPY --from=builder /app/internal/api/shared/mail/templates ./internal/api/shared/mail/templates
-
-RUN apk --no-cache add ca-certificates tzdata
+FROM scratch AS prod
+COPY --from=builder /app/main .
 
 EXPOSE 8080
 
-ENTRYPOINT ["/app/api"]
+ENTRYPOINT ["./main"]
