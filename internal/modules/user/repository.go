@@ -33,7 +33,7 @@ func (r repo) Update(ctx context.Context, user model.User) error {
 			avatar_url = :avatar_url,
 			enabled = :enabled,
 			locked = :locked,
-			updated = :updated
+			updated_at = :updated_at
 		WHERE id = :id
 	`
 
@@ -103,8 +103,8 @@ func (r repo) Insert(ctx context.Context, user model.User) error {
 			avatar_url,
 			enabled,
 			locked,
-			created,
-			updated
+			created_at,
+			updated_at
 		) VALUES (
 			:id,
 			:name,
@@ -114,8 +114,8 @@ func (r repo) Insert(ctx context.Context, user model.User) error {
 			:avatar_url,
 			:enabled,
 			:locked,
-			:created,
-			:updated
+			:created_at,
+			:updated_at
 		)
 	`
 

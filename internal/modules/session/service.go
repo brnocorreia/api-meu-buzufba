@@ -83,8 +83,8 @@ func (s service) GetAllSessions(ctx context.Context) ([]dto.SessionResponse, err
 			Agent:   s.Agent,
 			IP:      s.IP,
 			Active:  s.Active,
-			Created: s.Created,
-			Updated: s.Updated,
+			Created: s.CreatedAt,
+			Updated: s.UpdatedAt,
 		}
 	}
 

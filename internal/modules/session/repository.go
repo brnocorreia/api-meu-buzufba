@@ -153,8 +153,8 @@ func (r repo) Insert(ctx context.Context, session model.Session) error {
 			refresh_token,
 			active,
 			expires,
-			created,
-			updated
+			created_at,
+			updated_at
 		)	VALUES (
 			:id,
 			:user_id,
@@ -163,8 +163,8 @@ func (r repo) Insert(ctx context.Context, session model.Session) error {
 			:refresh_token,
 			:active,
 			:expires,
-			:created,
-			:updated
+			:created_at,
+			:updated_at
 		)
 	`
 

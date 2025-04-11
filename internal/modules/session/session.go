@@ -22,8 +22,8 @@ type session struct {
 	refreshToken string
 	active       bool
 	expires      time.Time
-	created      time.Time
-	updated      time.Time
+	createdAt    time.Time
+	updatedAt    time.Time
 }
 
 func New(userId, ip, agent, refresh string) (*session, error) {
@@ -35,8 +35,8 @@ func New(userId, ip, agent, refresh string) (*session, error) {
 		refreshToken: refresh,
 		active:       true,
 		expires:      time.Now().Add(ttl),
-		created:      time.Now(),
-		updated:      time.Now(),
+		createdAt:    time.Now(),
+		updatedAt:    time.Now(),
 	}
 
 	if err := s.validate(); err != nil {
@@ -59,8 +59,8 @@ func NewFromModel(m model.Session) *session {
 		refreshToken: m.RefreshToken,
 		active:       m.Active,
 		expires:      m.Expires,
-		created:      m.Created,
-		updated:      m.Updated,
+		createdAt:    m.CreatedAt,
+		updatedAt:    m.UpdatedAt,
 	}
 }
 
@@ -90,8 +90,8 @@ func (s *session) ToModel() model.Session {
 		RefreshToken: s.refreshToken,
 		Active:       s.active,
 		Expires:      s.expires,
-		Created:      s.created,
-		Updated:      s.updated,
+		CreatedAt:    s.createdAt,
+		UpdatedAt:    s.updatedAt,
 	}
 }
 
@@ -101,17 +101,17 @@ func (s *session) IsExpired() bool {
 
 func (s *session) ChangeRefreshToken(refreshToken string) {
 	s.refreshToken = refreshToken
-	s.updated = time.Now()
+	s.updatedAt = time.Now()
 }
 
 func (s *session) Activate() {
 	s.active = true
-	s.updated = time.Now()
+	s.updatedAt = time.Now()
 }
 
 func (s *session) Deactivate() {
 	s.active = false
-	s.updated = time.Now()
+	s.updatedAt = time.Now()
 }
 
 func (s *session) ID() string           { return s.id }
@@ -121,5 +121,5 @@ func (s *session) Agent() string        { return s.agent }
 func (s *session) RefreshToken() string { return s.refreshToken }
 func (s *session) Active() bool         { return s.active }
 func (s *session) Expires() time.Time   { return s.expires }
-func (s *session) Created() time.Time   { return s.created }
-func (s *session) Updated() time.Time   { return s.updated }
+func (s *session) CreatedAt() time.Time { return s.createdAt }
+func (s *session) UpdatedAt() time.Time { return s.updatedAt }

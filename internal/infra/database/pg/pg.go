@@ -16,7 +16,7 @@ type Database struct {
 	db     *sqlx.DB
 }
 
-func NewConnection(dsn string) (*Database, error) {
+func NewConnection(ctx context.Context, logger logging.Logger, dsn string) (*Database, error) {
 	db, err := sqlx.Connect("postgres", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
@@ -26,7 +26,7 @@ func NewConnection(dsn string) (*Database, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	return &Database{db: db}, nil
+	return &Database{ctx: ctx, logger: logger, db: db}, nil
 }
 
 func (d *Database) Close() error {

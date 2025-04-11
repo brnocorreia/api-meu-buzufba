@@ -54,14 +54,20 @@ func main() {
 		Password: cfg.RedisPassword,
 	})
 	if err != nil {
-		log.Criticalw(ctx, "failed to connect to cache", logging.Err(err))
+		log.Criticalw(ctx, "🔴 Failed to connect to cache", logging.Err(err))
 		panic(err)
 	}
 	defer cache.Close()
 
-	con, err := pg.NewConnection(cfg.PostgresDSN)
+	con, err := pg.NewConnection(ctx, log, cfg.PostgresDSN)
 	if err != nil {
-		log.Criticalw(ctx, "failed to connect database", logging.Err(err))
+		log.Criticalw(ctx, "🔴 Failed to connect database", logging.Err(err))
+		panic(err)
+	}
+	// Migrating database
+	err = con.Migrate()
+	if err != nil {
+		log.Criticalw(ctx, "🔴 Failed to migrate database", logging.Err(err))
 		panic(err)
 	}
 	defer con.Close()

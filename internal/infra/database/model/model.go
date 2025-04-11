@@ -10,8 +10,8 @@ type Session struct {
 	RefreshToken string    `db:"refresh_token"`
 	Active       bool      `db:"active"`
 	Expires      time.Time `db:"expires"`
-	Created      time.Time `db:"created"`
-	Updated      time.Time `db:"updated"`
+	CreatedAt    time.Time `db:"created_at"`
+	UpdatedAt    time.Time `db:"updated_at"`
 }
 
 type User struct {
