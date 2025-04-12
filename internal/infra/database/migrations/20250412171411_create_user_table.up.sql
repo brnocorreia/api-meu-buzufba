@@ -5,9 +5,9 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"username" VARCHAR(255) UNIQUE,
 	"name" VARCHAR(255),
 	"password" VARCHAR(255),
-	"avatar_url" VARCHAR(255) NULL,
-	"enabled" BOOLEAN DEFAULT true,
-	"locked" BOOLEAN DEFAULT false,
+	"is_ufba" BOOLEAN DEFAULT false,
+	"activated" BOOLEAN DEFAULT false,
+	"activated_at" TIMESTAMPTZ NULL,
 	"created_at" TIMESTAMPTZ DEFAULT now(),
 	"updated_at" TIMESTAMPTZ DEFAULT now()
 );

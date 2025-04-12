@@ -67,7 +67,7 @@ func main() {
 	// Migrating database
 	err = con.Migrate()
 	if err != nil {
-		log.Criticalw(ctx, "🔴 Failed to migrate database", logging.Err(err))
+		log.Criticalw(ctx, "🔴 Failed to migrate database. Panicning...", logging.Err(err))
 		panic(err)
 	}
 	defer con.Close()

@@ -3,11 +3,14 @@ package pg
 import (
 	"context"
 	"fmt"
-	"os/exec"
 
 	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 type Database struct {
@@ -40,14 +43,28 @@ func (d *Database) DB() *sqlx.DB {
 func (d *Database) Migrate() error {
 	d.logger.Info(d.ctx, "🚀 Initializing database migrations 🚀")
 
-	cmd := exec.Command("flyway", "migrate", "-configFiles=flyway.conf")
-	resp, err := cmd.CombinedOutput()
+	driver, err := postgres.WithInstance(d.db.DB, &postgres.Config{})
 	if err != nil {
 		d.logger.Error(d.ctx, "🔴 Error while migrating database 🔴")
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 
-	d.logger.Info(d.ctx, string(resp))
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://internal/infra/database/migrations",
+		"postgres",
+		driver,
+	)
+	if err != nil {
+		d.logger.Error(d.ctx, "🔴 Error while migrating database 🔴")
+		return fmt.Errorf("failed to migrate database: %w", err)
+	}
+
+	err = m.Up()
+	if err != nil {
+		d.logger.Error(d.ctx, "🔴 Error while migrating database 🔴")
+		return fmt.Errorf("failed to migrate database: %w", err)
+	}
+
 	d.logger.Info(d.ctx, "🟢 Database migrations completed successfully! 🟢")
 	return nil
 }
