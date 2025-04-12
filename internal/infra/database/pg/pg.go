@@ -61,6 +61,10 @@ func (d *Database) Migrate() error {
 
 	err = m.Up()
 	if err != nil {
+		if err == migrate.ErrNoChange {
+			d.logger.Info(d.ctx, "🟢 Database migrations already up to date 🟢")
+			return nil
+		}
 		d.logger.Error(d.ctx, "🔴 Error while migrating database 🔴")
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}
