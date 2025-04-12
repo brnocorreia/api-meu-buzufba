@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/brnocorreia/api-meu-buzufba/internal/common/dto"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/dbutil"
@@ -32,7 +33,10 @@ func (s service) CreateUser(ctx context.Context, input dto.CreateUser) (*dto.Use
 		return nil, fault.NewConflict("e-mail already taken")
 	}
 
-	newUser, err := New(input.Name, input.Username, input.Email, input.Password)
+	isUfba := checkIfUserEmailIsUfba(input.Email)
+	s.log.Infof(ctx, "⁉️ User email is UFBA: %t 🟢", isUfba)
+
+	newUser, err := New(input.Name, input.Username, input.Email, input.Password, isUfba)
 	if err != nil {
 		return nil, fault.NewUnprocessableEntity("failed to create user entity")
 
@@ -53,6 +57,7 @@ func (s service) CreateUser(ctx context.Context, input dto.CreateUser) (*dto.Use
 		Name:        model.Name,
 		Username:    model.Username,
 		Email:       model.Email,
+		IsUfba:      model.IsUfba,
 		Activated:   model.Activated,
 		ActivatedAt: model.ActivatedAt,
 		CreatedAt:   model.CreatedAt,
@@ -76,6 +81,7 @@ func (s service) GetUserByEmail(ctx context.Context, email string) (*dto.UserRes
 		Name:        userRecord.Name,
 		Username:    userRecord.Username,
 		Email:       userRecord.Email,
+		IsUfba:      userRecord.IsUfba,
 		Activated:   userRecord.Activated,
 		ActivatedAt: userRecord.ActivatedAt,
 		CreatedAt:   userRecord.CreatedAt,
@@ -98,6 +104,7 @@ func (s service) GetUserByID(ctx context.Context, userId string) (*dto.UserRespo
 		Name:        userRecord.Name,
 		Username:    userRecord.Username,
 		Email:       userRecord.Email,
+		IsUfba:      userRecord.IsUfba,
 		Activated:   userRecord.Activated,
 		ActivatedAt: userRecord.ActivatedAt,
 		CreatedAt:   userRecord.CreatedAt,
@@ -105,4 +112,8 @@ func (s service) GetUserByID(ctx context.Context, userId string) (*dto.UserRespo
 	}
 
 	return &user, nil
+}
+
+func checkIfUserEmailIsUfba(email string) bool {
+	return strings.HasSuffix(email, "@ufba.br")
 }

@@ -10,12 +10,13 @@ type CreateUser struct {
 }
 
 type UserResponse struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Username    string    `json:"username"`
-	Email       string    `json:"email"`
-	Activated   bool      `json:"activated"`
-	ActivatedAt time.Time `json:"activated_at"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Username    string     `json:"username"`
+	Email       string     `json:"email"`
+	IsUfba      bool       `json:"is_ufba"`
+	Activated   bool       `json:"activated"`
+	ActivatedAt *time.Time `json:"activated_at"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }

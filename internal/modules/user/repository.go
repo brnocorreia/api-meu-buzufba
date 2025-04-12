@@ -30,9 +30,9 @@ func (r repo) Update(ctx context.Context, user model.User) error {
 			username = :username,
 			email = :email,
 			password = :password,
-			avatar_url = :avatar_url,
-			enabled = :enabled,
-			locked = :locked,
+			is_ufba = :is_ufba,
+			activated = :activated,
+			activated_at = :activated_at,
 			updated_at = :updated_at
 		WHERE id = :id
 	`
@@ -100,9 +100,9 @@ func (r repo) Insert(ctx context.Context, user model.User) error {
 			username,
 			email,
 			password,
-			avatar_url,
-			enabled,
-			locked,
+			is_ufba,
+			activated,
+			activated_at,
 			created_at,
 			updated_at
 		) VALUES (
@@ -111,9 +111,9 @@ func (r repo) Insert(ctx context.Context, user model.User) error {
 			:username,
 			:email,
 			:password,
-			:avatar_url,
-			:enabled,
-			:locked,
+			:is_ufba,
+			:activated,
+			:activated_at,
 			:created_at,
 			:updated_at
 		)

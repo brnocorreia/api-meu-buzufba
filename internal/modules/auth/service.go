@@ -147,6 +147,7 @@ func (s service) GetSignedUser(ctx context.Context) (*dto.UserResponse, error) {
 		Name:        userRecord.Name,
 		Username:    userRecord.Username,
 		Email:       userRecord.Email,
+		IsUfba:      userRecord.IsUfba,
 		Activated:   userRecord.Activated,
 		ActivatedAt: userRecord.ActivatedAt,
 		CreatedAt:   userRecord.CreatedAt,

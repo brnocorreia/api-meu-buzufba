@@ -15,8 +15,9 @@ type user struct {
 	username     string
 	email        string
 	password     string
+	is_ufba      bool
 	activated    bool
-	activated_at time.Time
+	activated_at *time.Time
 	created_at   time.Time
 	updated_at   time.Time
 }
@@ -28,6 +29,7 @@ func NewFromModel(m model.User) *user {
 		username:     m.Username,
 		email:        m.Email,
 		password:     m.Password,
+		is_ufba:      m.IsUfba,
 		activated:    m.Activated,
 		activated_at: m.ActivatedAt,
 		created_at:   m.CreatedAt,
@@ -35,7 +37,7 @@ func NewFromModel(m model.User) *user {
 	}
 }
 
-func New(name, username, email, pass string) (*user, error) {
+func New(name, username, email, pass string, isUfba bool) (*user, error) {
 	hashedPass, err := crypto.HashPassword(pass)
 	if err != nil {
 		return nil, fault.New("failed to hash password", fault.WithError(err))
@@ -47,8 +49,9 @@ func New(name, username, email, pass string) (*user, error) {
 		username:     username,
 		email:        email,
 		password:     hashedPass,
+		is_ufba:      isUfba,
 		activated:    false,
-		activated_at: time.Now(),
+		activated_at: nil,
 		created_at:   time.Now(),
 		updated_at:   time.Now(),
 	}
@@ -66,7 +69,8 @@ func New(name, username, email, pass string) (*user, error) {
 
 func (u *user) Activate() {
 	u.activated = true
-	u.activated_at = time.Now()
+	now := time.Now()
+	u.activated_at = &now
 }
 
 func (u *user) ToModel() model.User {
@@ -76,6 +80,7 @@ func (u *user) ToModel() model.User {
 		Username:    u.username,
 		Email:       u.email,
 		Password:    u.password,
+		IsUfba:      u.is_ufba,
 		Activated:   u.activated,
 		ActivatedAt: u.activated_at,
 		CreatedAt:   u.created_at,
