@@ -90,7 +90,7 @@ func (s service) Activate(ctx context.Context, userId string) error {
 		return fault.NewNotFound("user not found")
 	}
 
-	if userRecord.Enabled {
+	if userRecord.Activated {
 		return fault.New(
 			"expired activation link",
 			fault.WithHTTPCode(http.StatusBadRequest),
@@ -99,7 +99,7 @@ func (s service) Activate(ctx context.Context, userId string) error {
 	}
 
 	user := user.NewFromModel(*userRecord)
-	user.Enable()
+	user.Activate()
 
 	err = s.userRepo.Update(ctx, user.ToModel())
 	if err != nil {
@@ -143,14 +143,14 @@ func (s service) GetSignedUser(ctx context.Context) (*dto.UserResponse, error) {
 	}
 
 	user = &dto.UserResponse{
-		ID:        userRecord.ID,
-		Name:      userRecord.Name,
-		Username:  userRecord.Username,
-		Email:     userRecord.Email,
-		AvatarURL: userRecord.AvatarURL,
-		Locked:    userRecord.Locked,
-		CreatedAt: userRecord.CreatedAt,
-		UpdatedAt: userRecord.UpdatedAt,
+		ID:          userRecord.ID,
+		Name:        userRecord.Name,
+		Username:    userRecord.Username,
+		Email:       userRecord.Email,
+		Activated:   userRecord.Activated,
+		ActivatedAt: userRecord.ActivatedAt,
+		CreatedAt:   userRecord.CreatedAt,
+		UpdatedAt:   userRecord.UpdatedAt,
 	}
 
 	go func() {
@@ -191,22 +191,6 @@ func (s service) Login(ctx context.Context, email, password, ip, agent string) (
 
 	if !crypto.PasswordMatches(password, userRecord.Password) {
 		return nil, fault.NewUnauthorized("invalid credentials")
-	}
-
-	if userRecord.Locked {
-		return nil, fault.New(
-			"user is locked",
-			fault.WithHTTPCode(http.StatusUnauthorized),
-			fault.WithTag(fault.LOCKED_USER),
-		)
-	}
-
-	if !userRecord.Enabled {
-		return nil, fault.New(
-			"user must enable account to login",
-			fault.WithHTTPCode(http.StatusUnauthorized),
-			fault.WithTag(fault.DISABLED_USER),
-		)
 	}
 
 	err = s.sessionRepo.DeactivateAll(ctx, userRecord.ID)

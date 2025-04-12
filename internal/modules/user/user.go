@@ -10,30 +10,28 @@ import (
 )
 
 type user struct {
-	id         string
-	name       string
-	username   string
-	email      string
-	password   string
-	avatar_url *string
-	enabled    bool
-	locked     bool
-	created    time.Time
-	updated    time.Time
+	id           string
+	name         string
+	username     string
+	email        string
+	password     string
+	activated    bool
+	activated_at time.Time
+	created_at   time.Time
+	updated_at   time.Time
 }
 
 func NewFromModel(m model.User) *user {
 	return &user{
-		id:         m.ID,
-		name:       m.Name,
-		username:   m.Username,
-		email:      m.Email,
-		password:   m.Password,
-		avatar_url: m.AvatarURL,
-		enabled:    m.Enabled,
-		locked:     m.Locked,
-		created:    m.CreatedAt,
-		updated:    m.UpdatedAt,
+		id:           m.ID,
+		name:         m.Name,
+		username:     m.Username,
+		email:        m.Email,
+		password:     m.Password,
+		activated:    m.Activated,
+		activated_at: m.ActivatedAt,
+		created_at:   m.CreatedAt,
+		updated_at:   m.UpdatedAt,
 	}
 }
 
@@ -44,16 +42,15 @@ func New(name, username, email, pass string) (*user, error) {
 	}
 
 	u := user{
-		id:         uid.New("user"),
-		name:       name,
-		username:   username,
-		email:      email,
-		password:   hashedPass,
-		avatar_url: nil,
-		enabled:    false,
-		locked:     false,
-		created:    time.Now(),
-		updated:    time.Now(),
+		id:           uid.New("user"),
+		name:         name,
+		username:     username,
+		email:        email,
+		password:     hashedPass,
+		activated:    false,
+		activated_at: time.Now(),
+		created_at:   time.Now(),
+		updated_at:   time.Now(),
 	}
 
 	if err := u.validate(); err != nil {
@@ -67,23 +64,22 @@ func New(name, username, email, pass string) (*user, error) {
 	return &u, nil
 }
 
-func (u *user) Enable() {
-	u.enabled = true
-	u.updated = time.Now()
+func (u *user) Activate() {
+	u.activated = true
+	u.activated_at = time.Now()
 }
 
 func (u *user) ToModel() model.User {
 	return model.User{
-		ID:        u.id,
-		Name:      u.name,
-		Username:  u.username,
-		Email:     u.email,
-		Password:  u.password,
-		AvatarURL: u.avatar_url,
-		Enabled:   u.enabled,
-		Locked:    u.locked,
-		CreatedAt: u.created,
-		UpdatedAt: u.updated,
+		ID:          u.id,
+		Name:        u.name,
+		Username:    u.username,
+		Email:       u.email,
+		Password:    u.password,
+		Activated:   u.activated,
+		ActivatedAt: u.activated_at,
+		CreatedAt:   u.created_at,
+		UpdatedAt:   u.updated_at,
 	}
 }
 

@@ -15,14 +15,13 @@ type Session struct {
 }
 
 type User struct {
-	ID        string    `db:"id"`
-	Name      string    `db:"name"`
-	Username  string    `db:"username"`
-	Email     string    `db:"email"`
-	Password  string    `db:"password"`
-	AvatarURL *string   `db:"avatar_url"`
-	Enabled   bool      `db:"enabled"`
-	Locked    bool      `db:"locked"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	ID          string    `db:"id"`
+	Name        string    `db:"name"`
+	Username    string    `db:"username"`
+	Email       string    `db:"email"`
+	Password    string    `db:"password"`
+	Activated   bool      `db:"activated"`
+	ActivatedAt time.Time `db:"activated_at"`
+	CreatedAt   time.Time `db:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at"`
 }

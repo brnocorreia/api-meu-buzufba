@@ -49,14 +49,14 @@ func (s service) CreateUser(ctx context.Context, input dto.CreateUser) (*dto.Use
 	}
 
 	user := dto.UserResponse{
-		ID:        model.ID,
-		Name:      model.Name,
-		Username:  model.Username,
-		Email:     model.Email,
-		AvatarURL: model.AvatarURL,
-		Locked:    model.Locked,
-		CreatedAt: model.CreatedAt,
-		UpdatedAt: model.UpdatedAt,
+		ID:          model.ID,
+		Name:        model.Name,
+		Username:    model.Username,
+		Email:       model.Email,
+		Activated:   model.Activated,
+		ActivatedAt: model.ActivatedAt,
+		CreatedAt:   model.CreatedAt,
+		UpdatedAt:   model.UpdatedAt,
 	}
 
 	return &user, nil
@@ -72,14 +72,14 @@ func (s service) GetUserByEmail(ctx context.Context, email string) (*dto.UserRes
 	}
 
 	user := dto.UserResponse{
-		ID:        userRecord.ID,
-		Name:      userRecord.Name,
-		Username:  userRecord.Username,
-		Email:     userRecord.Email,
-		AvatarURL: userRecord.AvatarURL,
-		Locked:    userRecord.Locked,
-		CreatedAt: userRecord.CreatedAt,
-		UpdatedAt: userRecord.UpdatedAt,
+		ID:          userRecord.ID,
+		Name:        userRecord.Name,
+		Username:    userRecord.Username,
+		Email:       userRecord.Email,
+		Activated:   userRecord.Activated,
+		ActivatedAt: userRecord.ActivatedAt,
+		CreatedAt:   userRecord.CreatedAt,
+		UpdatedAt:   userRecord.UpdatedAt,
 	}
 
 	return &user, nil
@@ -94,14 +94,14 @@ func (s service) GetUserByID(ctx context.Context, userId string) (*dto.UserRespo
 	}
 
 	user := dto.UserResponse{
-		ID:        userRecord.ID,
-		Name:      userRecord.Name,
-		Username:  userRecord.Username,
-		Email:     userRecord.Email,
-		AvatarURL: userRecord.AvatarURL,
-		Locked:    userRecord.Locked,
-		CreatedAt: userRecord.CreatedAt,
-		UpdatedAt: userRecord.UpdatedAt,
+		ID:          userRecord.ID,
+		Name:        userRecord.Name,
+		Username:    userRecord.Username,
+		Email:       userRecord.Email,
+		Activated:   userRecord.Activated,
+		ActivatedAt: userRecord.ActivatedAt,
+		CreatedAt:   userRecord.CreatedAt,
+		UpdatedAt:   userRecord.UpdatedAt,
 	}
 
 	return &user, nil
