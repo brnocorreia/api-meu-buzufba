@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brnocorreia/api-meu-buzufba/pkg/config"
+	"github.com/brnocorreia/api-meu-buzufba/internal/config"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
 	"github.com/redis/go-redis/v9"
 )

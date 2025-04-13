@@ -3,8 +3,8 @@ package pg
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
-	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 
@@ -14,12 +14,12 @@ import (
 )
 
 type Database struct {
-	ctx    context.Context
-	logger logging.Logger
-	db     *sqlx.DB
+	ctx context.Context
+
+	db *sqlx.DB
 }
 
-func NewConnection(ctx context.Context, logger logging.Logger, dsn string) (*Database, error) {
+func NewConnection(ctx context.Context, dsn string) (*Database, error) {
 	db, err := sqlx.Connect("postgres", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
@@ -29,7 +29,7 @@ func NewConnection(ctx context.Context, logger logging.Logger, dsn string) (*Dat
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	return &Database{ctx: ctx, logger: logger, db: db}, nil
+	return &Database{ctx: ctx, db: db}, nil
 }
 
 func (d *Database) Close() error {
@@ -41,11 +41,11 @@ func (d *Database) DB() *sqlx.DB {
 }
 
 func (d *Database) Migrate() error {
-	d.logger.Info(d.ctx, "🚀 Initializing database migrations 🚀")
+	slog.Info("🚀 Initializing database migrations 🚀")
 
 	driver, err := postgres.WithInstance(d.db.DB, &postgres.Config{})
 	if err != nil {
-		d.logger.Error(d.ctx, "🔴 Error while migrating database 🔴")
+		slog.Error("🔴 Error while migrating database 🔴")
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 
@@ -55,20 +55,20 @@ func (d *Database) Migrate() error {
 		driver,
 	)
 	if err != nil {
-		d.logger.Error(d.ctx, "🔴 Error while migrating database 🔴")
+		slog.Error("🔴 Error while migrating database 🔴")
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 
 	err = m.Up()
 	if err != nil {
 		if err == migrate.ErrNoChange {
-			d.logger.Info(d.ctx, "🟢 Database migrations already up to date 🟢")
+			slog.Info("🟢 Database migrations already up to date 🟢")
 			return nil
 		}
-		d.logger.Error(d.ctx, "🔴 Error while migrating database 🔴")
+		slog.Error("🔴 Error while migrating database 🔴")
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 
-	d.logger.Info(d.ctx, "🟢 Database migrations completed successfully! 🟢")
+	slog.Info("🟢 Database migrations completed successfully! 🟢")
 	return nil
 }

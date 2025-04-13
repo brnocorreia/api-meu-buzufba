@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/brnocorreia/api-meu-buzufba/internal/common/dto"
@@ -12,26 +13,35 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/user"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/cache"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
-	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
+	"github.com/brnocorreia/api-meu-buzufba/pkg/metric"
 
 	"github.com/medama-io/go-useragent"
 )
 
+type ServiceConfig struct {
+	SessionRepo Repository
+	UserRepo    user.Repository
+
+	Cache     *cache.Cache
+	Metrics   *metric.Metric
+	SecretKey string
+}
+
 type service struct {
-	log         logging.Logger
 	sessionRepo Repository
 	userRepo    user.Repository
 	cache       *cache.Cache
+	metrics     *metric.Metric
 	secretKey   string
 }
 
-func NewService(log logging.Logger, sessionRepo Repository, userRepo user.Repository, cache *cache.Cache, secretKey string) Service {
+func NewService(c ServiceConfig) Service {
 	return &service{
-		log:         log,
-		sessionRepo: sessionRepo,
-		userRepo:    userRepo,
-		cache:       cache,
-		secretKey:   secretKey,
+		sessionRepo: c.SessionRepo,
+		userRepo:    c.UserRepo,
+		cache:       c.Cache,
+		metrics:     c.Metrics,
+		secretKey:   c.SecretKey,
 	}
 }
 
@@ -43,6 +53,7 @@ func (s service) RenewAccessToken(ctx context.Context, refreshToken string) (*dt
 
 	sessRecord, err := s.sessionRepo.GetByRefreshToken(ctx, refreshToken)
 	if err != nil {
+		s.metrics.RecordError("sessions", "get-by-refresh-token")
 		return nil, fault.NewBadRequest("failed to retrieve session")
 	}
 	session := NewFromModel(*sessRecord)
@@ -72,9 +83,10 @@ func (s service) GetSessionByUserID(ctx context.Context, userID string) (*dto.Se
 	if err != nil {
 		switch {
 		case fault.GetTag(err) == fault.CACHE_MISS:
-			s.log.Info(ctx, "session not found in cache")
+			s.metrics.RecordCacheMiss("session-service")
+			slog.Info("cache: miss session not found")
 		default:
-			s.log.Error(ctx, "failed to query session from cache")
+			slog.Error("failed to query session from cache")
 		}
 	}
 
@@ -83,7 +95,8 @@ func (s service) GetSessionByUserID(ctx context.Context, userID string) (*dto.Se
 			return nil, fault.NewBadRequest("session has expired")
 		}
 
-		// if the session is found in cache we just return it
+		s.metrics.RecordCacheHit("session-service")
+
 		return &dto.SessionResponse{
 			ID:        cachedSession.ID,
 			Agent:     cachedSession.Agent,
@@ -96,6 +109,7 @@ func (s service) GetSessionByUserID(ctx context.Context, userID string) (*dto.Se
 
 	sessionRecord, err := s.sessionRepo.GetActiveByUserID(ctx, userID)
 	if err != nil {
+		s.metrics.RecordError("sessions", "get-active-by-user-id")
 		return nil, fault.NewBadRequest("failed to retrieve session")
 	} else if sessionRecord == nil {
 		return nil, fault.NewNotFound("session not found")
@@ -111,9 +125,9 @@ func (s service) GetSessionByUserID(ctx context.Context, userID string) (*dto.Se
 	}
 
 	cacheKey := fmt.Sprintf("sess:%s", userID)
-	err = s.cache.SetStruct(ctx, cacheKey, sessionRecord, time.Minute*15)
+	err = s.cache.SetStruct(ctx, cacheKey, sessionRecord, time.Minute*30)
 	if err != nil {
-		s.log.Errorw(ctx, "failed to cache session", logging.Err(err))
+		slog.Error("failed to cache session", "error", err)
 	}
 
 	return res, nil
@@ -122,12 +136,13 @@ func (s service) GetSessionByUserID(ctx context.Context, userID string) (*dto.Se
 func (s service) GetAllSessions(ctx context.Context) ([]dto.SessionResponse, error) {
 	c, ok := ctx.Value(middleware.AuthKey{}).(*token.Claims)
 	if !ok {
-		s.log.Error(ctx, "context does not contain auth key")
+		slog.Error("context does not contain auth key")
 		return nil, fault.NewUnauthorized("access token no provided")
 	}
 
 	records, err := s.sessionRepo.GetAllByUserID(ctx, c.UserID)
 	if err != nil {
+		s.metrics.RecordError("sessions", "get-all-by-user-id")
 		return nil, fault.NewBadRequest("failed to retrieve sessions")
 	}
 
@@ -155,6 +170,7 @@ func (s service) GetAllSessions(ctx context.Context) ([]dto.SessionResponse, err
 func (s service) CreateSession(ctx context.Context, input dto.CreateSession) (*dto.SessionResponse, error) {
 	userRecord, err := s.userRepo.GetByID(ctx, input.UserID)
 	if err != nil {
+		s.metrics.RecordError("sessions", "get-user-by-id")
 		return nil, fault.NewBadRequest("failed to retrieve user")
 	} else if userRecord == nil {
 		return nil, fault.NewNotFound("user not found with ID: " + input.UserID)
@@ -172,20 +188,13 @@ func (s service) CreateSession(ctx context.Context, input dto.CreateSession) (*d
 
 	sess, err := New(userID, input.IP, agent, input.RefreshToken)
 	if err != nil {
-		s.log.Errorw(ctx, "failed to create session entity", logging.Err(err))
 		return nil, fault.NewUnprocessableEntity("failed to create session entity")
 	}
 
 	err = s.sessionRepo.Insert(ctx, sess.Model())
 	if err != nil {
-		s.log.Errorw(ctx, "failed to insert session entity", logging.Err(err))
+		s.metrics.RecordError("sessions", "insert-session")
 		return nil, fault.NewBadRequest("failed to insert session entity")
-	}
-
-	cacheKey := fmt.Sprintf("sess:%s", userID)
-	err = s.cache.SetStruct(ctx, cacheKey, sess.Model(), time.Minute*15)
-	if err != nil {
-		s.log.Infow(ctx, "failed to session in cache", logging.Err(err))
 	}
 
 	res := dto.SessionResponse{

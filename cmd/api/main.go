@@ -2,152 +2,120 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"log/slog"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
+	"github.com/brnocorreia/api-meu-buzufba/internal/config"
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/database/pg"
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/database/redis"
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/http/middleware"
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/mail"
+	"github.com/brnocorreia/api-meu-buzufba/internal/infra/server"
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/auth"
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/session"
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/user"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/cache"
-	"github.com/brnocorreia/api-meu-buzufba/pkg/config"
-	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
+
+	"github.com/brnocorreia/api-meu-buzufba/pkg/metric"
 	"github.com/go-chi/chi/v5"
-	cmid "github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
 	ctx := context.Background()
+	metrics := metric.New()
 	cfg := config.GetConfig()
 
-	log := logging.New(logging.LogParams{
-		AppName:                  cfg.AppName,
-		DebugLevel:               cfg.DebugMode,
-		AddAttributesFromContext: nil,
-		LogToFile:                false,
+	r := chi.NewRouter()
+	middleware.Apply(r, middleware.Config{
+		Metrics: metrics,
 	})
 
-	r := chi.NewRouter()
-	r.Use(
-		cmid.Logger,
-		middleware.WithIP,
-		middleware.WithRateLimit,
-		cors.Handler(cors.Options{
-			AllowedOrigins:   []string{"https://*", "http://*"},
-			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-			AllowCredentials: true,
-			MaxAge:           300,
-		}),
-	)
+	r.Handle("/metrics", promhttp.HandlerFor(metrics.Registry(), promhttp.HandlerOpts{}))
 
 	redisConn, err := redis.NewConnection(ctx, cfg)
 	if err != nil {
-		log.Criticalw(ctx, "failed to connect to redis", logging.Err(err))
+		slog.Error("failed to connect to redis", "error", err)
 		panic(err)
 	}
 	defer redisConn.Close()
 
 	cache, err := cache.New(ctx, redisConn.DB())
 	if err != nil {
-		log.Criticalw(ctx, "failed to connect to cache", logging.Err(err))
+		slog.Error("failed to connect to cache", "error", err)
 		panic(err)
 	}
 	defer cache.Close()
 
-	pgConn, err := pg.NewConnection(ctx, log, cfg.PostgresDSN)
+	pgConn, err := pg.NewConnection(ctx, cfg.PostgresDSN)
 	if err != nil {
-		log.Criticalw(ctx, "🔴 Failed to connect database", logging.Err(err))
+		slog.Error("failed to connect to database", "error", err)
 		panic(err)
 	}
 	// Migrating database
 	err = pgConn.Migrate()
 	if err != nil {
-		log.Criticalw(ctx, "🔴 Failed to migrate database. Panicning...", logging.Err(err))
+		slog.Error("failed to migrate database", "error", err)
 		panic(err)
 	}
 	defer pgConn.Close()
 
-	// Mailer
-	mailService := mail.New(ctx, log, mail.Config{
+	// Repositories
+	userRepo := user.NewRepo(pgConn.DB())
+	sessionRepo := session.NewRepo(pgConn.DB())
+
+	// Services
+	mailService := mail.New(ctx, mail.Config{
 		MaxRetries: 3,
 		APIKey:     cfg.ResendKey,
 		RetryDelay: time.Second * 2,
 		Timeout:    time.Second * 5,
 	})
-	// User
-	userRepo := user.NewRepo(pgConn.DB())
 	// userService := user.NewService(log, userRepo)
+	sessionService := session.NewService(session.ServiceConfig{
+		SessionRepo: sessionRepo,
+		UserRepo:    userRepo,
+		Cache:       cache,
+		Metrics:     metrics,
+		SecretKey:   cfg.JWTSecretKey,
+	})
+	authService := auth.NewService(auth.ServiceConfig{
+		UserRepo:       userRepo,
+		SessionService: sessionService,
+		SessionRepo:    sessionRepo,
+		Mailer:         mailService,
+		Cache:          cache,
+		SecretKey:      cfg.JWTSecretKey,
+	})
 
-	// Session
-	sessionRepo := session.NewRepo(pgConn.DB())
-	sessionService := session.NewService(log, sessionRepo, userRepo, cache, cfg.JWTSecretKey)
+	// Handlers
 	session.NewHandler(sessionService, cfg.JWTSecretKey).Register(r)
-
-	// Auth
-	// TODO: Consider using option pattern to avoid having so many parameters
-	authService := auth.NewService(
-		log,
-		userRepo,
-		sessionService,
-		sessionRepo,
-		mailService,
-		cache,
-		cfg.JWTSecretKey,
-	)
 	auth.NewHandler(authService, cfg.JWTSecretKey).Register(r)
 
-	server := &http.Server{
-		Addr:         fmt.Sprintf(":%s", cfg.Port),
+	srv := server.New(server.Config{
+		Port:         cfg.Port,
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  time.Second * 5,
 		WriteTimeout: time.Second * 10,
-		Handler:      r,
-	}
-	log.Info(ctx, "🚀 Starting server")
+		Router:       r,
+	})
 
-	shutdownErr := make(chan error)
-	go func() {
-		stop := make(chan os.Signal, 1)
-		signal.Notify(
-			stop,
-			syscall.SIGHUP,
-			syscall.SIGINT,
-			syscall.SIGTERM,
-			syscall.SIGQUIT,
-		)
-		sig := <-stop
+	shutdoewnErr := srv.GracefulShutdown(ctx, time.Second*30)
 
-		log.Infow(ctx,
-			"caught signal...",
-			logging.String("signal", sig.String()),
-		)
-
-		ctx, cancel := context.WithTimeout(ctx, time.Second*30)
-		defer cancel()
-
-		shutdownErr <- server.Shutdown(ctx)
-	}()
-
-	err = server.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		log.Criticalw(ctx, "🔴 Failed to start server", logging.Err(err))
+	err = srv.Start()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		slog.Error("failed to start server", "error", err)
 		os.Exit(1)
 	}
 
-	err = <-shutdownErr
+	err = <-shutdoewnErr
 	if err != nil {
-		log.Criticalw(ctx, "🔴 Failed to shutdown server gracefully", logging.Err(err))
+		slog.Error("failed to shutdown server", "error", err)
 		os.Exit(1)
 	}
 
-	log.Info(ctx, "💫 Server shutdown gracefully")
+	slog.Info("server shutdown gracefully")
 }
