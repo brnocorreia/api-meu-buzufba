@@ -19,7 +19,6 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/pkg/crypto"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/dbutil"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
-	"github.com/brnocorreia/api-meu-buzufba/pkg/metric"
 	"github.com/lib/pq"
 )
 
@@ -36,7 +35,6 @@ type ServiceConfig struct {
 	SessionRepo    session.Repository
 	Mailer         *mail.Mail
 	Cache          *cache.Cache
-	Metrics        *metric.Metric
 }
 
 type service struct {
@@ -45,7 +43,6 @@ type service struct {
 	sessionRepo    session.Repository
 	mailer         *mail.Mail
 	cache          *cache.Cache
-	metrics        *metric.Metric
 	secretKey      string
 }
 
@@ -56,7 +53,6 @@ func NewService(c ServiceConfig) Service {
 		sessionRepo:    c.SessionRepo,
 		mailer:         c.Mailer,
 		cache:          c.Cache,
-		metrics:        c.Metrics,
 		secretKey:      c.SecretKey,
 	}
 }
@@ -70,9 +66,10 @@ func (s service) Logout(ctx context.Context) error {
 
 	sessRecord, err := s.sessionRepo.GetActiveByUserID(ctx, c.UserID)
 	if err != nil {
-		s.metrics.RecordError("auth", "get-active-by-user-id")
+		slog.Error("failed to retrieve active session", "error", err)
 		return fault.NewBadRequest("failed to retrieve active session")
 	} else if sessRecord == nil {
+		slog.Error("active session not found", "userID", c.UserID)
 		return fault.NewNotFound("active session not found")
 	}
 
@@ -81,6 +78,7 @@ func (s service) Logout(ctx context.Context) error {
 
 	err = s.sessionRepo.Update(ctx, sess.Model())
 	if err != nil {
+		slog.Error("failed to deactivate session", "error", err)
 		return fault.NewBadRequest("failed to deactivate session")
 	}
 
@@ -111,12 +109,15 @@ func (s service) Logout(ctx context.Context) error {
 func (s service) Activate(ctx context.Context, userId string) error {
 	userRecord, err := s.userRepo.GetByID(ctx, userId)
 	if err != nil {
+		slog.Error("failed to retrieve user", "error", err)
 		return fault.NewBadRequest("failed to get user by id")
 	} else if userRecord == nil {
+		slog.Error("user not found", "userID", userId)
 		return fault.NewNotFound("user not found")
 	}
 
 	if userRecord.Activated {
+		slog.Error("user already activated", "userID", userId)
 		return fault.New(
 			"expired activation link",
 			fault.WithHTTPCode(http.StatusBadRequest),
@@ -129,7 +130,7 @@ func (s service) Activate(ctx context.Context, userId string) error {
 
 	err = s.userRepo.Update(ctx, u.Model())
 	if err != nil {
-		s.metrics.RecordError("auth", "update-user")
+		slog.Error("failed to update user", "error", err)
 		return fault.NewBadRequest("failed to update user")
 	}
 
@@ -145,9 +146,10 @@ func (s service) GetSignedUser(ctx context.Context) (*dto.UserResponse, error) {
 
 	userRecord, err := s.userRepo.GetByID(ctx, c.UserID)
 	if err != nil {
-		s.metrics.RecordError("auth", "get-user-by-id")
+		slog.Error("failed to retrieve user", "error", err)
 		return nil, fault.NewBadRequest("failed to retrieve user")
 	} else if userRecord == nil {
+		slog.Error("user not found", "userID", c.UserID)
 		return nil, fault.NewNotFound("user not found")
 	}
 
@@ -169,7 +171,7 @@ func (s service) GetSignedUser(ctx context.Context) (*dto.UserResponse, error) {
 func (s service) Register(ctx context.Context, input dto.CreateUser) error {
 	userRecord, err := s.userRepo.GetByEmail(ctx, input.Email)
 	if err != nil {
-		s.metrics.RecordError("auth", "get-user-by-email")
+		slog.Error("failed to retrieve user", "error", err)
 		return fault.NewBadRequest("failed to get user by email")
 	} else if userRecord != nil {
 		slog.Error("failed to create user: e-mail already taken")
@@ -203,9 +205,10 @@ func (s service) Register(ctx context.Context, input dto.CreateUser) error {
 func (s service) Login(ctx context.Context, email, password, ip, agent string) (*dto.LoginResponse, error) {
 	userRecord, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
-		s.metrics.RecordError("auth", "get-user-by-email")
+		slog.Error("failed to retrieve user", "error", err)
 		return nil, fault.NewBadRequest("failed to get user by email")
 	} else if userRecord == nil {
+		slog.Error("user not found", "email", email)
 		return nil, fault.NewNotFound("user not found")
 	}
 	userID := userRecord.ID
@@ -216,7 +219,7 @@ func (s service) Login(ctx context.Context, email, password, ip, agent string) (
 
 	err = s.sessionRepo.DeactivateAll(ctx, userID)
 	if err != nil {
-		s.metrics.RecordError("auth", "deactivate-all-sessions")
+		slog.Error("failed to deactivate user sessions", "error", err)
 		return nil, fault.NewBadRequest("failed to deactivate user sessions")
 	}
 

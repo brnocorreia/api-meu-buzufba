@@ -13,7 +13,6 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/user"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/cache"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
-	"github.com/brnocorreia/api-meu-buzufba/pkg/metric"
 
 	"github.com/medama-io/go-useragent"
 )
@@ -22,8 +21,8 @@ type ServiceConfig struct {
 	SessionRepo Repository
 	UserRepo    user.Repository
 
-	Cache     *cache.Cache
-	Metrics   *metric.Metric
+	Cache *cache.Cache
+
 	SecretKey string
 }
 
@@ -31,8 +30,8 @@ type service struct {
 	sessionRepo Repository
 	userRepo    user.Repository
 	cache       *cache.Cache
-	metrics     *metric.Metric
-	secretKey   string
+
+	secretKey string
 }
 
 func NewService(c ServiceConfig) Service {
@@ -40,7 +39,6 @@ func NewService(c ServiceConfig) Service {
 		sessionRepo: c.SessionRepo,
 		userRepo:    c.UserRepo,
 		cache:       c.Cache,
-		metrics:     c.Metrics,
 		secretKey:   c.SecretKey,
 	}
 }
@@ -48,26 +46,30 @@ func NewService(c ServiceConfig) Service {
 func (s service) RenewAccessToken(ctx context.Context, refreshToken string) (*dto.RenewAccessToken, error) {
 	claims, err := token.Verify(s.secretKey, refreshToken)
 	if err != nil {
+		slog.Error("invalid refresh token", "error", err)
 		return nil, fault.NewUnauthorized("invalid refresh token")
 	}
 
 	sessRecord, err := s.sessionRepo.GetByRefreshToken(ctx, refreshToken)
 	if err != nil {
-		s.metrics.RecordError("sessions", "get-by-refresh-token")
+		slog.Error("failed to retrieve session", "error", err)
 		return nil, fault.NewBadRequest("failed to retrieve session")
 	}
 	session := NewFromModel(*sessRecord)
 
 	if session.IsExpired() {
+		slog.Error("session has expired", "sessionID", session.ID())
 		return nil, fault.NewBadRequest("session has expired")
 	}
 
 	if session.UserID() != claims.UserID {
+		slog.Error("unauthorized user", "sessionUserID", session.UserID(), "claimsUserID", claims.UserID)
 		return nil, fault.NewUnauthorized("unauthorized user")
 	}
 
 	newAccessToken, _, err := token.Gen(s.secretKey, claims.UserID, time.Minute*15)
 	if err != nil {
+		slog.Error("failed to generate access token", "error", err)
 		return nil, fault.NewBadRequest("failed to generate access token")
 	}
 
@@ -83,7 +85,6 @@ func (s service) GetSessionByUserID(ctx context.Context, userID string) (*dto.Se
 	if err != nil {
 		switch {
 		case fault.GetTag(err) == fault.CACHE_MISS:
-			s.metrics.RecordCacheMiss("session-service")
 			slog.Info("cache: miss session not found")
 		default:
 			slog.Error("failed to query session from cache")
@@ -92,10 +93,9 @@ func (s service) GetSessionByUserID(ctx context.Context, userID string) (*dto.Se
 
 	if cachedSession != nil {
 		if time.Now().After(cachedSession.Expires) {
+			slog.Error("session has expired", "userID", userID)
 			return nil, fault.NewBadRequest("session has expired")
 		}
-
-		s.metrics.RecordCacheHit("session-service")
 
 		return &dto.SessionResponse{
 			ID:        cachedSession.ID,
@@ -109,9 +109,10 @@ func (s service) GetSessionByUserID(ctx context.Context, userID string) (*dto.Se
 
 	sessionRecord, err := s.sessionRepo.GetActiveByUserID(ctx, userID)
 	if err != nil {
-		s.metrics.RecordError("sessions", "get-active-by-user-id")
+		slog.Error("failed to retrieve active session", "error", err)
 		return nil, fault.NewBadRequest("failed to retrieve session")
 	} else if sessionRecord == nil {
+		slog.Error("active session not found", "userID", userID)
 		return nil, fault.NewNotFound("session not found")
 	}
 
@@ -142,7 +143,7 @@ func (s service) GetAllSessions(ctx context.Context) ([]dto.SessionResponse, err
 
 	records, err := s.sessionRepo.GetAllByUserID(ctx, c.UserID)
 	if err != nil {
-		s.metrics.RecordError("sessions", "get-all-by-user-id")
+		slog.Error("failed to retrieve sessions", "error", err)
 		return nil, fault.NewBadRequest("failed to retrieve sessions")
 	}
 
@@ -170,9 +171,10 @@ func (s service) GetAllSessions(ctx context.Context) ([]dto.SessionResponse, err
 func (s service) CreateSession(ctx context.Context, input dto.CreateSession) (*dto.SessionResponse, error) {
 	userRecord, err := s.userRepo.GetByID(ctx, input.UserID)
 	if err != nil {
-		s.metrics.RecordError("sessions", "get-user-by-id")
+		slog.Error("failed to retrieve user", "error", err)
 		return nil, fault.NewBadRequest("failed to retrieve user")
 	} else if userRecord == nil {
+		slog.Error("user not found", "userID", input.UserID)
 		return nil, fault.NewNotFound("user not found with ID: " + input.UserID)
 	}
 	userID := userRecord.ID
@@ -188,12 +190,13 @@ func (s service) CreateSession(ctx context.Context, input dto.CreateSession) (*d
 
 	sess, err := New(userID, input.IP, agent, input.RefreshToken)
 	if err != nil {
+		slog.Error("failed to create session entity", "error", err)
 		return nil, fault.NewUnprocessableEntity("failed to create session entity")
 	}
 
 	err = s.sessionRepo.Insert(ctx, sess.Model())
 	if err != nil {
-		s.metrics.RecordError("sessions", "insert-session")
+		slog.Error("failed to insert session entity", "error", err)
 		return nil, fault.NewBadRequest("failed to insert session entity")
 	}
 

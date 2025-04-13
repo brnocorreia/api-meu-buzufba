@@ -19,22 +19,16 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/user"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/cache"
 
-	"github.com/brnocorreia/api-meu-buzufba/pkg/metric"
 	"github.com/go-chi/chi/v5"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
 	ctx := context.Background()
-	metrics := metric.New()
+
 	cfg := config.GetConfig()
 
 	r := chi.NewRouter()
-	middleware.Apply(r, middleware.Config{
-		Metrics: metrics,
-	})
-
-	r.Handle("/metrics", promhttp.HandlerFor(metrics.Registry(), promhttp.HandlerOpts{}))
+	middleware.Apply(r)
 
 	redisConn, err := redis.NewConnection(ctx, cfg)
 	if err != nil {
@@ -79,7 +73,6 @@ func main() {
 		SessionRepo: sessionRepo,
 		UserRepo:    userRepo,
 		Cache:       cache,
-		Metrics:     metrics,
 		SecretKey:   cfg.JWTSecretKey,
 	})
 	authService := auth.NewService(auth.ServiceConfig{

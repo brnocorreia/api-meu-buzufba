@@ -3,21 +3,18 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/brnocorreia/api-meu-buzufba/pkg/metric"
 	"github.com/go-chi/chi/v5"
+	chimid "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
 
-type Config struct {
-	Metrics *metric.Metric
-}
 type middlewareFn func(http.Handler) http.Handler
 
-func setup(cfg Config) []middlewareFn {
+func setup() []middlewareFn {
 	return []middlewareFn{
+		chimid.Logger,
 		withIP,
 		withRateLimit,
-		withMetrics(cfg.Metrics),
 		cors.Handler(cors.Options{
 			AllowedOrigins:   []string{"https://*", "http://*"},
 			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -27,8 +24,8 @@ func setup(cfg Config) []middlewareFn {
 		}),
 	}
 }
-func Apply(r *chi.Mux, cfg Config) {
-	for _, midleware := range setup(cfg) {
+func Apply(r *chi.Mux) {
+	for _, midleware := range setup() {
 		r.Use(midleware)
 	}
 }
