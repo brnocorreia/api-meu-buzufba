@@ -7,8 +7,8 @@ O Meu Buzufba é um projeto open source que visa ajudar a comunidade de docentes
 Este repositório contém a API do projeto, que usa a seguinte stack de tecnologias:
 
 - Go
-- Gin
-- MongoDB
+- Chi
+- Postgres
 - Redis
 - Docker
 
@@ -18,7 +18,7 @@ O projeto encontra-se em desenvolvimento e pode ser usado em caráter de testes 
 
 - [x] Autenticação
 - [x] Cadastro de usuários
-- [x] Atualização de perfil
+- [ ] Atualização de perfil
 - [ ] Recuperação de senha
 - [ ] Visualizar rotas
 - [ ] Visualizar paradas
