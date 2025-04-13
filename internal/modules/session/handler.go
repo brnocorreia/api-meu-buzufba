@@ -37,6 +37,7 @@ func (h handler) Register(r *chi.Mux) {
 	r.Route("/api/v1/sessions", func(r chi.Router) {
 		// Private
 		r.With(m.WithAuth).Get("/", h.handleGetSessions)
+		r.With(m.WithAuth).Get("/me", h.handleGetSignedSession)
 		// Public
 		r.Post("/refresh", h.handleRenewToken)
 	})
