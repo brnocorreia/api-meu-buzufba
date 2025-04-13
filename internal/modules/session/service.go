@@ -20,16 +20,16 @@ import (
 type service struct {
 	log         logging.Logger
 	sessionRepo Repository
-	userService user.Service
+	userRepo    user.Repository
 	cache       *cache.Cache
 	secretKey   string
 }
 
-func NewService(log logging.Logger, sessionRepo Repository, userService user.Service, cache *cache.Cache, secretKey string) Service {
+func NewService(log logging.Logger, sessionRepo Repository, userRepo user.Repository, cache *cache.Cache, secretKey string) Service {
 	return &service{
 		log:         log,
 		sessionRepo: sessionRepo,
-		userService: userService,
+		userRepo:    userRepo,
 		cache:       cache,
 		secretKey:   secretKey,
 	}
@@ -153,9 +153,11 @@ func (s service) GetAllSessions(ctx context.Context) ([]dto.SessionResponse, err
 }
 
 func (s service) CreateSession(ctx context.Context, input dto.CreateSession) (*dto.SessionResponse, error) {
-	userRecord, err := s.userService.GetUserByID(ctx, input.UserID)
+	userRecord, err := s.userRepo.GetByID(ctx, input.UserID)
 	if err != nil {
-		return nil, err // The error is already being handled in the user service
+		return nil, fault.NewBadRequest("failed to retrieve user")
+	} else if userRecord == nil {
+		return nil, fault.NewNotFound("user not found with ID: " + input.UserID)
 	}
 	userID := userRecord.ID
 

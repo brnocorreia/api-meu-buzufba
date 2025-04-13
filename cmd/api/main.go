@@ -85,11 +85,11 @@ func main() {
 	})
 	// User
 	userRepo := user.NewRepo(pgConn.DB())
-	userService := user.NewService(log, userRepo)
+	// userService := user.NewService(log, userRepo)
 
 	// Session
 	sessionRepo := session.NewRepo(pgConn.DB())
-	sessionService := session.NewService(log, sessionRepo, userService, cache, cfg.JWTSecretKey)
+	sessionService := session.NewService(log, sessionRepo, userRepo, cache, cfg.JWTSecretKey)
 	session.NewHandler(sessionService, cfg.JWTSecretKey).Register(r)
 
 	// Auth

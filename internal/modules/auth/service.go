@@ -27,7 +27,6 @@ const (
 	refreshTokenDuration = time.Hour * 24 * 30 // 30 days
 )
 
-// TODO: Remove sessionService dependency and user only the sessionRepo
 type service struct {
 	log            logging.Logger
 	userRepo       user.Repository
