@@ -111,7 +111,7 @@ func (s service) CreateSession(ctx context.Context, input dto.CreateSession) (se
 		s.log.Errorw(ctx, "failed to create session entity", logging.Err(err))
 		return "", fault.NewUnprocessableEntity("failed to create session entity")
 	}
-	model := sess.ToModel()
+	model := sess.Model()
 
 	err = s.sessionRepo.Insert(ctx, model)
 	if err != nil {

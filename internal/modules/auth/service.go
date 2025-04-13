@@ -74,7 +74,7 @@ func (s service) Logout(ctx context.Context) error {
 	session := session.NewFromModel(*sessRecord)
 	session.Deactivate()
 
-	err = s.sessionRepo.Update(ctx, session.ToModel())
+	err = s.sessionRepo.Update(ctx, session.Model())
 	if err != nil {
 		return fault.NewBadRequest("failed to deactivate session")
 	}
@@ -101,7 +101,7 @@ func (s service) Activate(ctx context.Context, userId string) error {
 	user := user.NewFromModel(*userRecord)
 	user.Activate()
 
-	err = s.userRepo.Update(ctx, user.ToModel())
+	err = s.userRepo.Update(ctx, user.Model())
 	if err != nil {
 		s.log.Errorw(ctx, "failed to update user", logging.Err(err))
 		return fault.NewBadRequest("failed to update user")

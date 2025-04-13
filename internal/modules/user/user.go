@@ -73,7 +73,7 @@ func (u *user) Activate() {
 	u.activated_at = &now
 }
 
-func (u *user) ToModel() model.User {
+func (u *user) Model() model.User {
 	return model.User{
 		ID:          u.id,
 		Name:        u.name,
