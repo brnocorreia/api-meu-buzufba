@@ -40,7 +40,6 @@ type service struct {
 
 func NewService(
 	log logging.Logger,
-	userService user.Service,
 	userRepo user.Repository,
 	sessionService session.Service,
 	sessionRepo session.Repository,

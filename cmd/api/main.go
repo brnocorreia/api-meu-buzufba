@@ -96,7 +96,6 @@ func main() {
 	// TODO: Consider using option pattern to avoid having so many parameters
 	authService := auth.NewService(
 		log,
-		userService,
 		userRepo,
 		sessionService,
 		sessionRepo,
