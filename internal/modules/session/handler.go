@@ -5,9 +5,9 @@ import (
 	"sync"
 
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/http/middleware"
+	"github.com/brnocorreia/api-meu-buzufba/internal/infra/http/token"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
 	httputil "github.com/brnocorreia/api-meu-buzufba/pkg/http_util"
-	"github.com/brnocorreia/api-meu-buzufba/pkg/token"
 	"github.com/go-chi/chi/v5"
 )
 

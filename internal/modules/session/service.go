@@ -8,11 +8,11 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/common/dto"
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/database/model"
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/http/middleware"
+	"github.com/brnocorreia/api-meu-buzufba/internal/infra/http/token"
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/user"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/cache"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
-	"github.com/brnocorreia/api-meu-buzufba/pkg/token"
 
 	"github.com/medama-io/go-useragent"
 )

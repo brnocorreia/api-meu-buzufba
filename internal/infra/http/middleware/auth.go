@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/brnocorreia/api-meu-buzufba/internal/infra/http/token"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
-	"github.com/brnocorreia/api-meu-buzufba/pkg/token"
 )
 
 type AuthKey struct{}
