@@ -21,10 +21,10 @@ type RenewAccessToken struct {
 }
 
 type SessionResponse struct {
-	ID      string    `json:"id"`
-	Agent   string    `json:"agent"`
-	IP      string    `json:"ip_address"`
-	Active  bool      `json:"active"`
-	Created time.Time `json:"created"`
-	Updated time.Time `json:"updated"`
+	ID        string    `json:"id"`
+	Agent     string    `json:"agent"`
+	IP        string    `json:"ip_address"`
+	Active    bool      `json:"active"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
