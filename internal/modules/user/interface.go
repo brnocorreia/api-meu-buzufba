@@ -18,5 +18,4 @@ type Repository interface {
 type Service interface {
 	GetUserByEmail(ctx context.Context, email string) (*dto.UserResponse, error)
 	GetUserByID(ctx context.Context, userId string) (*dto.UserResponse, error)
-	CreateUser(ctx context.Context, input dto.CreateUser) (*dto.UserResponse, error)
 }

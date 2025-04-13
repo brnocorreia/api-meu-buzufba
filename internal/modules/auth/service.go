@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/brnocorreia/api-meu-buzufba/internal/common/dto"
@@ -13,9 +15,11 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/user"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/cache"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/crypto"
+	"github.com/brnocorreia/api-meu-buzufba/pkg/dbutil"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/token"
+	"github.com/lib/pq"
 )
 
 const (
@@ -23,11 +27,9 @@ const (
 	refreshTokenDuration = time.Hour * 24 * 30 // 30 days
 )
 
-// TODO: Remove userService dependency and user only the userRepo
 // TODO: Remove sessionService dependency and user only the sessionRepo
 type service struct {
 	log            logging.Logger
-	userService    user.Service
 	userRepo       user.Repository
 	sessionService session.Service
 	sessionRepo    session.Repository
@@ -48,7 +50,6 @@ func NewService(
 ) Service {
 	return &service{
 		log:            log,
-		userService:    userService,
 		userRepo:       userRepo,
 		sessionService: sessionService,
 		sessionRepo:    sessionRepo,
@@ -157,10 +158,33 @@ func (s service) GetSignedUser(ctx context.Context) (*dto.UserResponse, error) {
 }
 
 func (s service) Register(ctx context.Context, input dto.CreateUser) error {
-	_, err := s.userService.CreateUser(ctx, input)
+	userRecord, err := s.userRepo.GetByEmail(ctx, input.Email)
 	if err != nil {
 		s.log.Errorw(ctx, "failed to create user", logging.Err(err))
-		return err // The error is already being handled in the user service
+		return fault.NewBadRequest("failed to get user by email")
+	} else if userRecord != nil {
+		s.log.Error(ctx, "failed to create user: e-mail already taken")
+		return fault.NewConflict("e-mail already taken")
+	}
+
+	isUfba := checkIfUserEmailIsUfba(input.Email)
+	s.log.Infof(ctx, "⁉️ User email is UFBA: %t 🟢", isUfba)
+
+	newUser, err := user.New(input.Name, input.Username, input.Email, input.Password, isUfba)
+	if err != nil {
+		s.log.Errorw(ctx, "failed to create user", logging.Err(err))
+		return fault.NewUnprocessableEntity("failed to create user entity")
+	}
+	model := newUser.Model()
+
+	if err = s.userRepo.Insert(ctx, model); err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" { // 23505 is the code for unique constraint violation
+			field := dbutil.ExtractFieldFromDetail(pqErr.Detail)
+			return fault.NewConflict(fmt.Sprintf("%s already taken", field))
+		}
+		s.log.Errorw(ctx, "failed to insert user", logging.Err(err))
+		return fault.NewBadRequest("failed to insert user")
 	}
 
 	// TODO: Send a welcome email here in the future
@@ -217,4 +241,8 @@ func (s service) Login(ctx context.Context, email, password, ip, agent string) (
 	}
 
 	return &response, nil
+}
+
+func checkIfUserEmailIsUfba(email string) bool {
+	return strings.HasSuffix(email, "@ufba.br")
 }

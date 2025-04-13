@@ -2,15 +2,10 @@ package user
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/brnocorreia/api-meu-buzufba/internal/common/dto"
-	"github.com/brnocorreia/api-meu-buzufba/pkg/dbutil"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
-	"github.com/lib/pq"
 )
 
 type service struct {
@@ -23,48 +18,6 @@ func NewService(log logging.Logger, userRepo Repository) Service {
 		log:      log,
 		userRepo: userRepo,
 	}
-}
-
-func (s service) CreateUser(ctx context.Context, input dto.CreateUser) (*dto.UserResponse, error) {
-	userRecord, err := s.userRepo.GetByEmail(ctx, input.Email)
-	if err != nil {
-		return nil, fault.NewBadRequest("failed to get user by email")
-	} else if userRecord != nil {
-		return nil, fault.NewConflict("e-mail already taken")
-	}
-
-	isUfba := checkIfUserEmailIsUfba(input.Email)
-	s.log.Infof(ctx, "⁉️ User email is UFBA: %t 🟢", isUfba)
-
-	newUser, err := New(input.Name, input.Username, input.Email, input.Password, isUfba)
-	if err != nil {
-		return nil, fault.NewUnprocessableEntity("failed to create user entity")
-
-	}
-	model := newUser.Model()
-
-	if err = s.userRepo.Insert(ctx, model); err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == "23505" { // 23505 is the code for unique constraint violation
-			field := dbutil.ExtractFieldFromDetail(pqErr.Detail)
-			return nil, fault.NewConflict(fmt.Sprintf("%s already taken", field))
-		}
-		return nil, fault.NewBadRequest("failed to insert user")
-	}
-
-	user := dto.UserResponse{
-		ID:          model.ID,
-		Name:        model.Name,
-		Username:    model.Username,
-		Email:       model.Email,
-		IsUfba:      model.IsUfba,
-		Activated:   model.Activated,
-		ActivatedAt: model.ActivatedAt,
-		CreatedAt:   model.CreatedAt,
-		UpdatedAt:   model.UpdatedAt,
-	}
-
-	return &user, nil
 }
 
 func (s service) GetUserByEmail(ctx context.Context, email string) (*dto.UserResponse, error) {
@@ -112,8 +65,4 @@ func (s service) GetUserByID(ctx context.Context, userId string) (*dto.UserRespo
 	}
 
 	return &user, nil
-}
-
-func checkIfUserEmailIsUfba(email string) bool {
-	return strings.HasSuffix(email, "@ufba.br")
 }
