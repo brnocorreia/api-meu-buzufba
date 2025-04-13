@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/database/pg"
+	"github.com/brnocorreia/api-meu-buzufba/internal/infra/database/redis"
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/http/middleware"
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/mail"
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/auth"
@@ -48,29 +49,32 @@ func main() {
 		}),
 	)
 
-	cache, err := cache.New(ctx, &cache.Config{
-		Host:     cfg.RedisHost,
-		Port:     cfg.RedisPort,
-		Password: cfg.RedisPassword,
-	})
+	redisConn, err := redis.NewConnection(ctx, cfg)
 	if err != nil {
-		log.Criticalw(ctx, "🔴 Failed to connect to cache", logging.Err(err))
+		log.Criticalw(ctx, "failed to connect to redis", logging.Err(err))
+		panic(err)
+	}
+	defer redisConn.Close()
+
+	cache, err := cache.New(ctx, redisConn.DB())
+	if err != nil {
+		log.Criticalw(ctx, "failed to connect to cache", logging.Err(err))
 		panic(err)
 	}
 	defer cache.Close()
 
-	con, err := pg.NewConnection(ctx, log, cfg.PostgresDSN)
+	pgConn, err := pg.NewConnection(ctx, log, cfg.PostgresDSN)
 	if err != nil {
 		log.Criticalw(ctx, "🔴 Failed to connect database", logging.Err(err))
 		panic(err)
 	}
 	// Migrating database
-	err = con.Migrate()
+	err = pgConn.Migrate()
 	if err != nil {
 		log.Criticalw(ctx, "🔴 Failed to migrate database. Panicning...", logging.Err(err))
 		panic(err)
 	}
-	defer con.Close()
+	defer pgConn.Close()
 
 	// Mailer
 	mailService := mail.New(ctx, log, mail.Config{
@@ -80,11 +84,11 @@ func main() {
 		Timeout:    time.Second * 5,
 	})
 	// User
-	userRepo := user.NewRepo(con.DB())
+	userRepo := user.NewRepo(pgConn.DB())
 	userService := user.NewService(log, userRepo)
 
 	// Session
-	sessionRepo := session.NewRepo(con.DB())
+	sessionRepo := session.NewRepo(pgConn.DB())
 	sessionService := session.NewService(log, sessionRepo, userService, cfg.JWTSecretKey)
 	session.NewHandler(sessionService, cfg.JWTSecretKey).Register(r)
 

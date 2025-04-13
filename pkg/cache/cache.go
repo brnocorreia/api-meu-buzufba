@@ -4,38 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
 	"github.com/redis/go-redis/v9"
 )
 
-type Config struct {
-	Host     string
-	Port     string
-	Password string
-	DB       int
-}
-
 type Cache struct {
 	redis *redis.Client
 }
 
-func New(ctx context.Context, config *Config) (*Cache, error) {
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", config.Host, config.Port),
-		Password: config.Password,
-		DB:       0,
-	})
-
-	_, err := redisClient.Ping(ctx).Result()
-	if err != nil {
-		return nil, fault.New("failed to connect to redis", fault.WithError(err))
-	}
-
+func New(ctx context.Context, db *redis.Client) (*Cache, error) {
 	return &Cache{
-		redis: redisClient,
+		redis: db,
 	}, nil
 }
 
