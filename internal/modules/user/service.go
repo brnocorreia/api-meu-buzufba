@@ -5,7 +5,11 @@ import (
 
 	"github.com/brnocorreia/api-meu-buzufba/internal/common/dto"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
+	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
+	"go.uber.org/zap"
 )
+
+const userServiceJourney = "user service"
 
 type ServiceConfig struct {
 	UserRepo Repository
@@ -24,9 +28,14 @@ func NewService(c ServiceConfig) Service {
 func (s service) GetUserByEmail(ctx context.Context, email string) (*dto.UserResponse, error) {
 	userRecord, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
+		logging.Error("failed to retrieve user", err,
+			zap.String("journey", userServiceJourney))
 		return nil, fault.NewBadRequest("failed to retrieve user")
 	}
 	if userRecord == nil {
+		logging.Info("user not found",
+			zap.String("journey", userServiceJourney),
+			zap.String("email", email))
 		return nil, fault.NewNotFound("user not found")
 	}
 
@@ -48,8 +57,13 @@ func (s service) GetUserByEmail(ctx context.Context, email string) (*dto.UserRes
 func (s service) GetUserByID(ctx context.Context, userId string) (*dto.UserResponse, error) {
 	userRecord, err := s.userRepo.GetByID(ctx, userId)
 	if err != nil {
+		logging.Error("failed to retrieve user", err,
+			zap.String("journey", userServiceJourney))
 		return nil, fault.NewBadRequest("failed to retrieve user")
 	} else if userRecord == nil {
+		logging.Info("user not found",
+			zap.String("journey", userServiceJourney),
+			zap.String("userID", userId))
 		return nil, fault.NewNotFound("user not found")
 	}
 

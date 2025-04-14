@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -19,12 +18,15 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/pkg/crypto"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/dbutil"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
+	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
 	"github.com/lib/pq"
+	"go.uber.org/zap"
 )
 
 const (
 	accessTokenDuration  = time.Minute * 15    // 15 minutes
 	refreshTokenDuration = time.Hour * 24 * 30 // 30 days
+	authServiceJourney   = "auth service"
 )
 
 type ServiceConfig struct {
@@ -60,16 +62,20 @@ func NewService(c ServiceConfig) Service {
 func (s service) Logout(ctx context.Context) error {
 	c, ok := ctx.Value(middleware.AuthKey{}).(*token.Claims)
 	if !ok {
-		slog.Error("context does not contain auth key")
-		return fault.NewUnauthorized("access token no provided")
+		logging.Error("context does not contain auth key",
+			fmt.Errorf("access token not provided"),
+			zap.String("journey", authServiceJourney))
+		return fault.NewUnauthorized("access token not provided")
 	}
 
 	sessRecord, err := s.sessionRepo.GetActiveByUserID(ctx, c.UserID)
 	if err != nil {
-		slog.Error("failed to retrieve active session", "error", err)
+		logging.Error("failed to retrieve active session", err,
+			zap.String("journey", authServiceJourney))
 		return fault.NewBadRequest("failed to retrieve active session")
 	} else if sessRecord == nil {
-		slog.Error("active session not found", "userID", c.UserID)
+		logging.Error("active session not found", err,
+			zap.String("journey", authServiceJourney))
 		return fault.NewNotFound("active session not found")
 	}
 
@@ -78,13 +84,15 @@ func (s service) Logout(ctx context.Context) error {
 
 	err = s.sessionRepo.Update(ctx, sess.Model())
 	if err != nil {
-		slog.Error("failed to deactivate session", "error", err)
+		logging.Error("failed to deactivate session", err,
+			zap.String("journey", authServiceJourney))
 		return fault.NewBadRequest("failed to deactivate session")
 	}
 
 	err = s.cache.Delete(ctx, fmt.Sprintf("sess:%s", c.UserID))
 	if err != nil {
-		slog.Error("failed to delete session from cache", "error", err)
+		logging.Error("failed to delete session from cache", err,
+			zap.String("journey", authServiceJourney))
 	}
 
 	// Delete the session from the cache when the user logs out
@@ -94,11 +102,13 @@ func (s service) Logout(ctx context.Context) error {
 		cacheKey := fmt.Sprintf("sess:%s", c.UserID)
 		has, err := s.cache.Has(ctx, cacheKey)
 		if err != nil {
-			slog.Error("failed to check if session is in cache", "error", err)
+			logging.Error("failed to check if session is in cache", err,
+				zap.String("journey", authServiceJourney))
 		} else if has {
 			err = s.cache.Delete(ctx, c.UserID)
 			if err != nil {
-				slog.Error("failed to delete session from cache", "error", err)
+				logging.Error("failed to delete session from cache", err,
+					zap.String("journey", authServiceJourney))
 			}
 		}
 	}()
@@ -109,15 +119,18 @@ func (s service) Logout(ctx context.Context) error {
 func (s service) Activate(ctx context.Context, userId string) error {
 	userRecord, err := s.userRepo.GetByID(ctx, userId)
 	if err != nil {
-		slog.Error("failed to retrieve user", "error", err)
+		logging.Error("failed to retrieve user", err,
+			zap.String("journey", authServiceJourney))
 		return fault.NewBadRequest("failed to get user by id")
 	} else if userRecord == nil {
-		slog.Error("user not found", "userID", userId)
+		logging.Error("user not found", err,
+			zap.String("journey", authServiceJourney))
 		return fault.NewNotFound("user not found")
 	}
 
 	if userRecord.Activated {
-		slog.Error("user already activated", "userID", userId)
+		logging.Error("user already activated", err,
+			zap.String("journey", authServiceJourney))
 		return fault.New(
 			"expired activation link",
 			fault.WithHTTPCode(http.StatusBadRequest),
@@ -130,7 +143,8 @@ func (s service) Activate(ctx context.Context, userId string) error {
 
 	err = s.userRepo.Update(ctx, u.Model())
 	if err != nil {
-		slog.Error("failed to update user", "error", err)
+		logging.Error("failed to update user", err,
+			zap.String("journey", authServiceJourney))
 		return fault.NewBadRequest("failed to update user")
 	}
 
@@ -140,16 +154,20 @@ func (s service) Activate(ctx context.Context, userId string) error {
 func (s service) GetSignedUser(ctx context.Context) (*dto.UserResponse, error) {
 	c, ok := ctx.Value(middleware.AuthKey{}).(*token.Claims)
 	if !ok {
-		slog.Error("context does not contain auth key")
-		return nil, fault.NewUnauthorized("access token no provided")
+		logging.Error("context does not contain auth key",
+			fmt.Errorf("access token not provided"),
+			zap.String("journey", authServiceJourney))
+		return nil, fault.NewUnauthorized("access token not provided")
 	}
 
 	userRecord, err := s.userRepo.GetByID(ctx, c.UserID)
 	if err != nil {
-		slog.Error("failed to retrieve user", "error", err)
+		logging.Error("failed to retrieve user", err,
+			zap.String("journey", authServiceJourney))
 		return nil, fault.NewBadRequest("failed to retrieve user")
 	} else if userRecord == nil {
-		slog.Error("user not found", "userID", c.UserID)
+		logging.Error("user not found", err,
+			zap.String("journey", authServiceJourney))
 		return nil, fault.NewNotFound("user not found")
 	}
 
@@ -171,10 +189,12 @@ func (s service) GetSignedUser(ctx context.Context) (*dto.UserResponse, error) {
 func (s service) Register(ctx context.Context, input dto.CreateUser) error {
 	userRecord, err := s.userRepo.GetByEmail(ctx, input.Email)
 	if err != nil {
-		slog.Error("failed to retrieve user", "error", err)
+		logging.Error("failed to retrieve user", err,
+			zap.String("journey", authServiceJourney))
 		return fault.NewBadRequest("failed to get user by email")
 	} else if userRecord != nil {
-		slog.Error("failed to create user: e-mail already taken")
+		logging.Error("failed to create user: e-mail already taken", err,
+			zap.String("journey", authServiceJourney))
 		return fault.NewConflict("e-mail already taken")
 	}
 
@@ -182,7 +202,8 @@ func (s service) Register(ctx context.Context, input dto.CreateUser) error {
 
 	newUser, err := user.New(input.Name, input.Username, input.Email, input.Password, isUfba)
 	if err != nil {
-		slog.Error("failed to create user", "error", err)
+		logging.Error("failed to create user", err,
+			zap.String("journey", authServiceJourney))
 		return fault.NewUnprocessableEntity("failed to create user entity")
 	}
 	model := newUser.Model()
@@ -193,7 +214,8 @@ func (s service) Register(ctx context.Context, input dto.CreateUser) error {
 			field := dbutil.ExtractFieldFromDetail(pqErr.Detail)
 			return fault.NewConflict(fmt.Sprintf("%s already taken", field))
 		}
-		slog.Error("failed to insert user", "error", err)
+		logging.Error("failed to insert user", err,
+			zap.String("journey", authServiceJourney))
 		return fault.NewBadRequest("failed to insert user")
 	}
 
@@ -205,10 +227,12 @@ func (s service) Register(ctx context.Context, input dto.CreateUser) error {
 func (s service) Login(ctx context.Context, email, password, ip, agent string) (*dto.LoginResponse, error) {
 	userRecord, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
-		slog.Error("failed to retrieve user", "error", err)
+		logging.Error("failed to retrieve user", err,
+			zap.String("journey", authServiceJourney))
 		return nil, fault.NewBadRequest("failed to get user by email")
 	} else if userRecord == nil {
-		slog.Error("user not found", "email", email)
+		logging.Error("user not found", err,
+			zap.String("journey", authServiceJourney))
 		return nil, fault.NewNotFound("user not found")
 	}
 	userID := userRecord.ID
@@ -219,19 +243,22 @@ func (s service) Login(ctx context.Context, email, password, ip, agent string) (
 
 	err = s.sessionRepo.DeactivateAll(ctx, userID)
 	if err != nil {
-		slog.Error("failed to deactivate user sessions", "error", err)
+		logging.Error("failed to deactivate user sessions", err,
+			zap.String("journey", authServiceJourney))
 		return nil, fault.NewBadRequest("failed to deactivate user sessions")
 	}
 
 	accessToken, _, err := token.Gen(s.secretKey, userID, accessTokenDuration)
 	if err != nil {
-		slog.Error("failed to generate access token", "error", err)
+		logging.Error("failed to generate access token", err,
+			zap.String("journey", authServiceJourney))
 		return nil, fault.NewUnauthorized(err.Error())
 	}
 
 	refreshToken, _, err := token.Gen(s.secretKey, userID, refreshTokenDuration)
 	if err != nil {
-		slog.Error("failed to generate refresh token", "error", err)
+		logging.Error("failed to generate refresh token", err,
+			zap.String("journey", authServiceJourney))
 		return nil, fault.NewUnauthorized(err.Error())
 	}
 
