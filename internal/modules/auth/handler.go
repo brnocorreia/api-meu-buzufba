@@ -7,9 +7,15 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/common/dto"
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/http/middleware"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
+	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
+	"go.uber.org/zap"
 
 	httputil "github.com/brnocorreia/api-meu-buzufba/pkg/http_util"
 	"github.com/go-chi/chi/v5"
+)
+
+const (
+	authHandlerJourney = "auth handler"
 )
 
 var (
@@ -50,6 +56,7 @@ func (h handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	err := h.authService.Logout(ctx)
 	if err != nil {
+		logging.Error("failed to logout", err, zap.String("journey", authHandlerJourney))
 		fault.NewHTTPError(w, err)
 		return
 	}
@@ -63,6 +70,7 @@ func (h handler) handleActivate(w http.ResponseWriter, r *http.Request) {
 
 	err := h.authService.Activate(ctx, userId)
 	if err != nil {
+		logging.Error("failed to activate user", err, zap.String("journey", authHandlerJourney))
 		fault.NewHTTPError(w, err)
 		return
 	}
@@ -74,6 +82,7 @@ func (h handler) handleGetSigned(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	user, err := h.authService.GetSignedUser(ctx)
 	if err != nil {
+		logging.Error("failed to get signed user", err, zap.String("journey", authHandlerJourney))
 		fault.NewHTTPError(w, err)
 		return
 	}
@@ -87,6 +96,7 @@ func (h handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 	var body dto.CreateUser
 	err := httputil.ReadRequestBody(w, r, &body)
 	if err != nil {
+		logErrorInReadRequestBody(err, r)
 		fault.NewHTTPError(w, err)
 		return
 	}
@@ -110,6 +120,7 @@ func (h handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	err := httputil.ReadRequestBody(w, r, &body)
 	if err != nil {
+		logErrorInReadRequestBody(err, r)
 		fault.NewHTTPError(w, err)
 		return
 	}
@@ -121,4 +132,11 @@ func (h handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, res)
+}
+
+func logErrorInReadRequestBody(err error, r *http.Request) {
+	logging.Error("failed to read request body", err,
+		zap.String("journey", authHandlerJourney),
+		zap.String("method", r.Method),
+		zap.String("path", r.URL.Path))
 }
