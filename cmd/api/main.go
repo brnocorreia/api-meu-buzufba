@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -18,13 +17,14 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/session"
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/user"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/cache"
+	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
+	"go.uber.org/zap"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
 	ctx := context.Background()
-
 	cfg := config.GetConfig()
 
 	r := chi.NewRouter()
@@ -32,27 +32,27 @@ func main() {
 
 	redisConn, err := redis.NewConnection(ctx, cfg)
 	if err != nil {
-		slog.Error("failed to connect to redis", "error", err)
+		logging.Error("failed to connect to redis", err, zap.String("journey", "main"))
 		panic(err)
 	}
 	defer redisConn.Close()
 
 	cache, err := cache.New(ctx, redisConn.DB())
 	if err != nil {
-		slog.Error("failed to connect to cache", "error", err)
+		logging.Error("failed to connect to cache", err, zap.String("journey", "main"))
 		panic(err)
 	}
 	defer cache.Close()
 
 	pgConn, err := pg.NewConnection(ctx, cfg.PostgresDSN)
 	if err != nil {
-		slog.Error("failed to connect to database", "error", err)
+		logging.Error("failed to connect to database", err, zap.String("journey", "main"))
 		panic(err)
 	}
 	// Migrating database
 	err = pgConn.Migrate()
 	if err != nil {
-		slog.Error("failed to migrate database", "error", err)
+		logging.Error("failed to migrate database", err, zap.String("journey", "main"))
 		panic(err)
 	}
 	defer pgConn.Close()
@@ -100,15 +100,15 @@ func main() {
 
 	err = srv.Start()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		slog.Error("failed to start server", "error", err)
+		logging.Error("failed to start server", err, zap.String("journey", "main"))
 		os.Exit(1)
 	}
 
 	err = <-shutdoewnErr
 	if err != nil {
-		slog.Error("failed to shutdown server", "error", err)
+		logging.Error("failed to shutdown server", err, zap.String("journey", "main"))
 		os.Exit(1)
 	}
 
-	slog.Info("server shutdown gracefully")
+	logging.Info("server shutdown gracefully", zap.String("journey", "main"))
 }

@@ -8,7 +8,13 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/http/token"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
 	httputil "github.com/brnocorreia/api-meu-buzufba/pkg/http_util"
+	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
+)
+
+const (
+	sessionHandlerJourney = "session handler"
 )
 
 var (
@@ -48,6 +54,10 @@ func (h handler) handleGetSignedSession(w http.ResponseWriter, r *http.Request) 
 
 	c, ok := ctx.Value(middleware.AuthKey{}).(*token.Claims)
 	if !ok {
+		logging.Info("Unable to retrieve claims from token",
+			zap.String("journey", sessionHandlerJourney),
+			zap.String("method", r.Method),
+			zap.String("path", r.URL.Path))
 		fault.NewHTTPError(w, fault.NewUnauthorized("invalid access token"))
 		return
 	}
@@ -70,6 +80,10 @@ func (h handler) handleRenewToken(w http.ResponseWriter, r *http.Request) {
 
 	err := httputil.ReadRequestBody(w, r, &body)
 	if err != nil {
+		logging.Error("failed to read request body", err,
+			zap.String("journey", sessionHandlerJourney),
+			zap.String("method", r.Method),
+			zap.String("path", r.URL.Path))
 		fault.NewHTTPError(w, err)
 		return
 	}

@@ -3,10 +3,11 @@ package pg
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
+	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -22,10 +23,14 @@ type Database struct {
 func NewConnection(ctx context.Context, dsn string) (*Database, error) {
 	db, err := sqlx.Connect("postgres", dsn)
 	if err != nil {
+		logging.Error("failed to connect to database", err,
+			zap.String("journey", "pg"))
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	if err := db.Ping(); err != nil {
+		logging.Error("failed to ping database", err,
+			zap.String("journey", "pg"))
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
@@ -41,11 +46,13 @@ func (d *Database) DB() *sqlx.DB {
 }
 
 func (d *Database) Migrate() error {
-	slog.Info("🚀 Initializing database migrations 🚀")
+	logging.Info("initializing database migrations",
+		zap.String("journey", "pg"))
 
 	driver, err := postgres.WithInstance(d.db.DB, &postgres.Config{})
 	if err != nil {
-		slog.Error("🔴 Error while migrating database 🔴")
+		logging.Error("failed to migrate database", err,
+			zap.String("journey", "pg"))
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 
@@ -55,20 +62,24 @@ func (d *Database) Migrate() error {
 		driver,
 	)
 	if err != nil {
-		slog.Error("🔴 Error while migrating database 🔴")
+		logging.Error("failed to migrate database", err,
+			zap.String("journey", "pg"))
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 
 	err = m.Up()
 	if err != nil {
 		if err == migrate.ErrNoChange {
-			slog.Info("🟢 Database migrations already up to date 🟢")
+			logging.Info("database migrations already up to date, skipping...",
+				zap.String("journey", "pg"))
 			return nil
 		}
-		slog.Error("🔴 Error while migrating database 🔴")
+		logging.Error("failed to migrate database", err,
+			zap.String("journey", "pg"))
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 
-	slog.Info("🟢 Database migrations completed successfully! 🟢")
+	logging.Info("database migrations completed successfully!",
+		zap.String("journey", "pg"))
 	return nil
 }

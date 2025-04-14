@@ -5,14 +5,15 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"time"
 
 	"html/template"
 
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
+	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
 	"github.com/resend/resend-go/v2"
+	"go.uber.org/zap"
 )
 
 //go:embed "templates"
@@ -52,7 +53,8 @@ func (m *Mail) Send(p SendParams) error {
 
 	tmpl, err := template.New("email").ParseFS(templateFS, tmplLocation)
 	if err != nil {
-		slog.Error("error on parse template", "error", err)
+		logging.Error("error on parse template", err,
+			zap.String("journey", "mail"))
 		return fault.New(
 			"failed to parse template",
 			fault.WithHTTPCode(http.StatusInternalServerError),
@@ -63,7 +65,8 @@ func (m *Mail) Send(p SendParams) error {
 
 	var body bytes.Buffer
 	if err := tmpl.Execute(&body, p.Data); err != nil {
-		slog.Error("error on execute template", "error", err)
+		logging.Error("error on execute template", err,
+			zap.String("journey", "mail"))
 		return fault.New(
 			"failed to execute template",
 			fault.WithHTTPCode(http.StatusInternalServerError),
@@ -91,17 +94,16 @@ func (m *Mail) send(p *resend.SendEmailRequest, maxRetries int) error {
 
 		_, err := m.client.Emails.SendWithContext(ctx, p)
 		if err == nil {
-			slog.Info("email sent",
-				"attempt", attempt,
-				"to", p.To[0],
+			logging.Info("email sent",
+				zap.Int("attempt", attempt),
+				zap.String("to", p.To[0]),
 			)
 			return nil
 		}
 
-		slog.Error("error on send email",
-			"error", err,
-			"attempt", attempt,
-			"to", p.To[0],
+		logging.Error("error on send email", err,
+			zap.Int("attempt", attempt),
+			zap.String("to", p.To[0]),
 		)
 
 		mailerErr = err

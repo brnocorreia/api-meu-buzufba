@@ -4,7 +4,9 @@ import (
 	"log"
 	"sync"
 
+	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 var (
@@ -39,10 +41,14 @@ func GetConfig() *Config {
 		viper.AutomaticEnv()
 
 		if err := viper.ReadInConfig(); err != nil {
+			logging.Error("error reading config file", err,
+				zap.String("journey", "config"))
 			log.Fatalf("error reading config file, %s", err)
 		}
 
 		if err := viper.Unmarshal(&config); err != nil {
+			logging.Error("error unmarshalling config", err,
+				zap.String("journey", "config"))
 			log.Fatalf("error unmarshalling config, %s", err)
 		}
 	})
