@@ -3,11 +3,12 @@ package server
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 )
 
 type Config struct {
@@ -39,10 +40,14 @@ func New(c Config) *Server {
 }
 
 func (s *Server) Start() error {
-	slog.Info("server started", "port", s.config.Port)
+	logging.Info("server started",
+		zap.String("journey", "server"),
+		zap.String("port", s.config.Port))
 	return s.server.ListenAndServe()
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
+	logging.Info("shutting down server",
+		zap.String("journey", "server"))
 	return s.server.Shutdown(ctx)
 }

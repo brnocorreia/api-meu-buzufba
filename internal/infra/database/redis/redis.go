@@ -6,7 +6,9 @@ import (
 
 	"github.com/brnocorreia/api-meu-buzufba/internal/config"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
+	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 type database struct {
@@ -22,6 +24,8 @@ func NewConnection(ctx context.Context, config *config.Config) (*database, error
 
 	_, err := client.Ping(ctx).Result()
 	if err != nil {
+		logging.Error("failed to connect to redis", err,
+			zap.String("journey", "redis"))
 		return nil, fault.New("failed to connect to redis", fault.WithError(err))
 	}
 
