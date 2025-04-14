@@ -5,18 +5,19 @@ import (
 
 	"github.com/brnocorreia/api-meu-buzufba/internal/common/dto"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/fault"
-	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
 )
 
+type ServiceConfig struct {
+	UserRepo Repository
+}
+
 type service struct {
-	log      logging.Logger
 	userRepo Repository
 }
 
-func NewService(log logging.Logger, userRepo Repository) Service {
+func NewService(c ServiceConfig) Service {
 	return &service{
-		log:      log,
-		userRepo: userRepo,
+		userRepo: c.UserRepo,
 	}
 }
 

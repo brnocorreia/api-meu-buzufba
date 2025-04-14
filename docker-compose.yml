@@ -1,6 +1,6 @@
 services:
   db:
-    container_name: ${APP_NAME}-postgres
+    container_name: meu-buzufba-postgres
     image: bitnami/postgresql:latest
     env_file: ".env"
     environment:
@@ -16,7 +16,7 @@ services:
       - meu-buzufba-network
 
   cache:
-    container_name: ${APP_NAME}-redis
+    container_name: meu-buzufba-redis
     image: redis:7.2-alpine
     ports:
       - 6379:6379
