@@ -10,12 +10,13 @@ import (
 type Repository interface {
 	Insert(ctx context.Context, stop model.Stop) error
 	Update(ctx context.Context, stop model.Stop) error
-	GetByID(ctx context.Context, stopId int) (*model.Stop, error)
+	GetByID(ctx context.Context, stopId string) (*model.Stop, error)
 	GetBySlug(ctx context.Context, slug string) (*model.Stop, error)
-	Inactivate(ctx context.Context, stopId int) error
+	Inactivate(ctx context.Context, stopId string) error
 }
 
 type Service interface {
 	GetStopBySlug(ctx context.Context, slug string) (*dto.StopResponse, error)
-	GetStopByID(ctx context.Context, stopId int) (*dto.StopResponse, error)
+	GetStopByID(ctx context.Context, stopId string) (*dto.StopResponse, error)
+	InactivateStop(ctx context.Context, stopId string) error
 }

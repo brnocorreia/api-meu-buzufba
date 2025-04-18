@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS "stops" (
-	"id" PRIMARY KEY INT AUTO_INCREMENT,
-	"slug" VARCHAR(255) NOT NULL,
+	"id" PRIMARY KEY VARCHAR(255),
+	"slug" VARCHAR(255) NOT NULL UNIQUE,
 	"name" VARCHAR(255) NOT NULL,
 	"latitude" DOUBLE PRECISION NOT NULL,
 	"longitude" DOUBLE PRECISION NOT NULL,
@@ -13,3 +13,4 @@ CREATE TABLE IF NOT EXISTS "stops" (
 CREATE INDEX "idx_stops_latitude" ON "stops" ("latitude");
 CREATE INDEX "idx_stops_longitude" ON "stops" ("longitude");
 CREATE INDEX "idx_stops_name" ON "stops" ("name");
+CREATE INDEX "idx_stops_slug" ON "stops" ("slug");
