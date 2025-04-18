@@ -26,3 +26,15 @@ type User struct {
 	CreatedAt   time.Time  `db:"created_at"`
 	UpdatedAt   time.Time  `db:"updated_at"`
 }
+
+type Stop struct {
+	ID        int       `db:"id"`
+	Slug      string    `db:"slug"`
+	Name      string    `db:"name"`
+	Latitude  float64   `db:"latitude"`
+	Longitude float64   `db:"longitude"`
+	Security  int       `db:"security_rating"`
+	IsActive  bool      `db:"is_active"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
+}
