@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS "stops" (
 	"latitude" DOUBLE PRECISION NOT NULL,
 	"longitude" DOUBLE PRECISION NOT NULL,
 	"security_rating" INT NOT NULL,
+	"is_active" BOOLEAN DEFAULT TRUE,
 	"created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
 	"updated_at" TIMESTAMPTZ NOT NULL DEFAULT now()
 )
