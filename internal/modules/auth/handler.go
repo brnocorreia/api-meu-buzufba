@@ -46,9 +46,9 @@ func (h handler) Register(r *chi.Mux) {
 		r.With(m.WithAuth).Get("/me", h.handleGetSigned)
 		r.With(m.WithAuth).Patch("/logout", h.handleLogout)
 		// Public
-		r.Get("/activate/{userId}", h.handleActivate)
-		r.Post("/register", h.handleRegister)
-		r.Post("/login", h.handleLogin)
+		r.With(m.WithAuth).Get("/activate/{userId}", h.handleActivate)
+		r.With(m.WithAuth).Post("/register", h.handleRegister)
+		r.With(m.WithAuth).Post("/login", h.handleLogin)
 	})
 }
 
