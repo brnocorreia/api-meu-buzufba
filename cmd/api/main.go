@@ -15,6 +15,7 @@ import (
 	"github.com/brnocorreia/api-meu-buzufba/internal/infra/server"
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/auth"
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/session"
+	"github.com/brnocorreia/api-meu-buzufba/internal/modules/stop"
 	"github.com/brnocorreia/api-meu-buzufba/internal/modules/user"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/cache"
 	"github.com/brnocorreia/api-meu-buzufba/pkg/logging"
@@ -60,6 +61,7 @@ func main() {
 	// Repositories
 	userRepo := user.NewRepo(pgConn.DB())
 	sessionRepo := session.NewRepo(pgConn.DB())
+	stopRepo := stop.NewRepo(pgConn.DB())
 
 	// Services
 	mailService := mail.New(ctx, mail.Config{
@@ -83,10 +85,14 @@ func main() {
 		Cache:          cache,
 		SecretKey:      cfg.JWTSecretKey,
 	})
+	stopService := stop.NewService(stop.ServiceConfig{
+		StopRepo: stopRepo,
+	})
 
 	// Handlers
 	session.NewHandler(sessionService, cfg.JWTSecretKey).Register(r)
 	auth.NewHandler(authService, cfg.JWTSecretKey).Register(r)
+	stop.NewHandler(stopService).Register(r)
 
 	srv := server.New(server.Config{
 		Port:         cfg.Port,
