@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  routedb:
+    image: postgres:latest
+    container_name: routedb
+    environment:
+      POSTGRES_DB: route
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - routes-db-data:/var/lib/postgresql/data
+    networks:
+      - route-network
+
+  routemanagementservice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: routemanagementservice
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    environment:
+      - DB_HOST=routedb
+    depends_on:
+      - routedb
+    networks:
+      - route-network
+
+volumes:
+  routes-db-data:
+
+networks:
+  route-network:
+    driver: bridge
